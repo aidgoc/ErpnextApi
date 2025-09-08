@@ -222,13 +222,29 @@ function App() {
     const allEndpoints = [...commonEndpoints, ...customEndpoints]
     const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
     if (endpointData) {
-      setEndpoint(endpointData.value)
+      let finalEndpoint = endpointData.value
+      
+      // Smart endpoint replacement for PUT requests
+      if (method === 'PUT' && endpointData.value.includes('{name}')) {
+        if (endpointData.value.includes('/api/resource/Customer/{name}')) {
+          finalEndpoint = '/api/resource/Customer/Yadav'
+        } else if (endpointData.value.includes('/api/resource/User/{name}')) {
+          finalEndpoint = '/api/resource/User/john.doe@example.com'
+        } else if (endpointData.value.includes('/api/resource/Item/{name}')) {
+          finalEndpoint = '/api/resource/Item/ITEM-001'
+        } else {
+          // Generic replacement
+          finalEndpoint = endpointData.value.replace('{name}', 'DOC-001')
+        }
+      }
+      
+      setEndpoint(finalEndpoint)
       // Don't change the method - keep the user's selected method
       // setMethod(endpointData.method) // Removed this line
       
       // Set appropriate default request body based on current method and endpoint
       if (method === 'POST' || method === 'PUT') {
-        setRequestBody(getDefaultRequestBody(endpointData.value, method))
+        setRequestBody(getDefaultRequestBody(finalEndpoint, method))
       } else {
         setRequestBody('{"field": "value"}')
       }
