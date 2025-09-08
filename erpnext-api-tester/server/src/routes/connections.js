@@ -5,6 +5,26 @@ import ERPNextClient from '../erpnext/ERPNextClient.js';
 const router = express.Router();
 
 /**
+ * DELETE /connections/reset
+ * Clear all connections (for fixing encryption key issues)
+ */
+router.delete('/reset', async (req, res) => {
+  try {
+    await Connection.deleteMany({});
+    res.json({
+      ok: true,
+      message: 'All connections cleared successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: 'Failed to clear connections',
+      error: error.message
+    });
+  }
+});
+
+/**
  * POST /connections
  * Create a new connection with encrypted secrets and test ping
  */

@@ -970,7 +970,7 @@ function App() {
                   disabled={loading || !selectedConnection || !endpoint}
                 >
                   {loading ? 'Sending...' : 'Send Request'}
-                </button>
+        </button>
               </div>
             </div>
           </div>
@@ -990,7 +990,7 @@ function App() {
           </div>
         </div>
       </main>
-    </div>
+      </div>
   )
 }
 
