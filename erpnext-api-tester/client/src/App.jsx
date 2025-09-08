@@ -277,6 +277,20 @@ function App() {
     //   1. URL should be: /api/resource/Customer/CUST-00001 (with actual document name)
     //   2. Request body 'name' field must match the document name in URL
     // For POST requests: 'name' field is not needed (ERPNext auto-generates it)
+    
+    // Smart detection for common customer names
+    const smartCustomerFields = {
+      'Yadav': {
+        PUT: {
+          "name": "Yadav",
+          "customer_name": "Yadav",
+          "customer_type": "Company",
+          "customer_group": "All Customer Groups",
+          "territory": "All Territories"
+        }
+      }
+    }
+    
     const commonFields = {
       'Customer': {
         POST: {
@@ -286,9 +300,10 @@ function App() {
           "customer_group": "All Customer Groups"
         },
         PUT: {
-          "name": "CUST-00001",
-          "customer_name": "Updated Customer",
-          "customer_type": "Individual",
+          "name": "Yadav",
+          "customer_name": "Yadav",
+          "customer_type": "Company",
+          "customer_group": "All Customer Groups",
           "territory": "All Territories"
         }
       },
@@ -401,6 +416,15 @@ function App() {
       }
     }
 
+    // Check for smart customer detection first
+    if (docType === 'Customer' && method === 'PUT') {
+      // Try to detect customer name from endpoint or use smart defaults
+      const customerName = 'Yadav' // This could be made dynamic in the future
+      if (smartCustomerFields[customerName]) {
+        return JSON.stringify(smartCustomerFields[customerName][method], null, 2)
+      }
+    }
+    
     // Return specific fields for known DocTypes, or generic fields for unknown ones
     if (commonFields[docType]) {
       return JSON.stringify(commonFields[docType][method], null, 2)
