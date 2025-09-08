@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import axios from 'axios'
 
+// API Base URL - will be different for development and production
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 function App() {
   const [connections, setConnections] = useState([])
   const [selectedConnection, setSelectedConnection] = useState('')
@@ -181,7 +184,7 @@ function App() {
 
   const loadConnections = async () => {
     try {
-      const res = await axios.get('http://localhost:4000/api/connections')
+      const res = await axios.get(`${API_BASE_URL}/api/connections`)
       if (res.data.ok) {
         setConnections(res.data.data)
         if (res.data.data.length > 0 && !selectedConnection) {
@@ -201,7 +204,7 @@ function App() {
 
     setCreatingConnection(true)
     try {
-      const res = await axios.post('http://localhost:4000/api/connections', newConnection)
+      const res = await axios.post(`${API_BASE_URL}/api/connections`, newConnection)
       if (res.data.ok) {
         toast.success('Connection created successfully')
         setNewConnection({ name: '', baseUrl: '', apiKey: '', apiSecret: '' })
@@ -658,7 +661,7 @@ function App() {
         body: method !== 'GET' ? JSON.parse(requestBody) : undefined
       }
 
-      const res = await axios.post('http://localhost:4000/api/erp/send', requestData)
+      const res = await axios.post(`${API_BASE_URL}/api/erp/send`, requestData)
       
       if (res.data.ok) {
         setResponse({
