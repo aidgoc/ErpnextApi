@@ -420,12 +420,6 @@ function App() {
     }
   }
 
-  const handleMethodChange = (newMethod) => {
-    setMethod(newMethod)
-    // Clear endpoint when method changes to force user to select new endpoint
-    setEndpoint('')
-  }
-
   const addCustomEndpoint = () => {
     if (customEndpoint.trim()) {
       const newCustomEndpoint = {
