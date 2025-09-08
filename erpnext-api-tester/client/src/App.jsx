@@ -1,0 +1,568 @@
+import { useState, useEffect } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
+import axios from 'axios'
+
+function App() {
+  const [connections, setConnections] = useState([])
+  const [selectedConnection, setSelectedConnection] = useState('')
+  const [endpoint, setEndpoint] = useState('/api/method/ping')
+  const [method, setMethod] = useState('GET')
+  const [requestBody, setRequestBody] = useState('{"field": "value"}')
+  const [response, setResponse] = useState({
+    status: 'Ready to test API calls',
+    message: 'Select a connection and send a request'
+  })
+  const [loading, setLoading] = useState(false)
+  
+  // Endpoint management
+  const [showCustomEndpoint, setShowCustomEndpoint] = useState(false)
+  const [customEndpoint, setCustomEndpoint] = useState('')
+  const [customEndpoints, setCustomEndpoints] = useState([])
+  
+  // Common ERPNext endpoints
+  const commonEndpoints = [
+    // GET endpoints
+    { value: '/api/method/ping', label: 'Ping (Health Check)', method: 'GET' },
+    { value: '/api/resource/DocType', label: 'DocType List', method: 'GET' },
+    { value: '/api/resource/User', label: 'User List', method: 'GET' },
+    { value: '/api/resource/Customer', label: 'Customer List', method: 'GET' },
+    { value: '/api/resource/Item', label: 'Item List', method: 'GET' },
+    { value: '/api/resource/Sales Invoice', label: 'Sales Invoice List', method: 'GET' },
+    { value: '/api/resource/Purchase Invoice', label: 'Purchase Invoice List', method: 'GET' },
+    { value: '/api/resource/Quotation', label: 'Quotation List', method: 'GET' },
+    { value: '/api/resource/Sales Order', label: 'Sales Order List', method: 'GET' },
+    { value: '/api/resource/Purchase Order', label: 'Purchase Order List', method: 'GET' },
+    { value: '/api/resource/Lead', label: 'Lead List', method: 'GET' },
+    { value: '/api/resource/Opportunity', label: 'Opportunity List', method: 'GET' },
+    { value: '/api/resource/Contact', label: 'Contact List', method: 'GET' },
+    { value: '/api/resource/Address', label: 'Address List', method: 'GET' },
+    { value: '/api/resource/Company', label: 'Company List', method: 'GET' },
+    { value: '/api/resource/Warehouse', label: 'Warehouse List', method: 'GET' },
+    { value: '/api/resource/Stock Entry', label: 'Stock Entry List', method: 'GET' },
+    { value: '/api/resource/Delivery Note', label: 'Delivery Note List', method: 'GET' },
+    { value: '/api/resource/Purchase Receipt', label: 'Purchase Receipt List', method: 'GET' },
+    { value: '/api/resource/Journal Entry', label: 'Journal Entry List', method: 'GET' },
+    { value: '/api/resource/Account', label: 'Account List', method: 'GET' },
+    { value: '/api/resource/Cost Center', label: 'Cost Center List', method: 'GET' },
+    { value: '/api/resource/Project', label: 'Project List', method: 'GET' },
+    { value: '/api/resource/Task', label: 'Task List', method: 'GET' },
+    { value: '/api/resource/ToDo', label: 'ToDo List', method: 'GET' },
+    { value: '/api/resource/Event', label: 'Event List', method: 'GET' },
+    { value: '/api/resource/Communication', label: 'Communication List', method: 'GET' },
+    { value: '/api/resource/File', label: 'File List', method: 'GET' },
+    { value: '/api/resource/Version', label: 'Version List', method: 'GET' },
+    { value: '/api/resource/Error Log', label: 'Error Log List', method: 'GET' },
+    { value: '/api/method/frappe.auth.get_logged_user', label: 'Get Logged User', method: 'GET' },
+    
+    // POST endpoints
+    { value: '/api/resource/DocType', label: 'Create DocType', method: 'POST' },
+    { value: '/api/resource/User', label: 'Create User', method: 'POST' },
+    { value: '/api/resource/Customer', label: 'Create Customer', method: 'POST' },
+    { value: '/api/resource/Item', label: 'Create Item', method: 'POST' },
+    { value: '/api/resource/Sales Invoice', label: 'Create Sales Invoice', method: 'POST' },
+    { value: '/api/resource/Purchase Invoice', label: 'Create Purchase Invoice', method: 'POST' },
+    { value: '/api/resource/Quotation', label: 'Create Quotation', method: 'POST' },
+    { value: '/api/resource/Sales Order', label: 'Create Sales Order', method: 'POST' },
+    { value: '/api/resource/Purchase Order', label: 'Create Purchase Order', method: 'POST' },
+    { value: '/api/resource/Lead', label: 'Create Lead', method: 'POST' },
+    { value: '/api/resource/Opportunity', label: 'Create Opportunity', method: 'POST' },
+    { value: '/api/resource/Contact', label: 'Create Contact', method: 'POST' },
+    { value: '/api/resource/Address', label: 'Create Address', method: 'POST' },
+    { value: '/api/resource/Company', label: 'Create Company', method: 'POST' },
+    { value: '/api/resource/Warehouse', label: 'Create Warehouse', method: 'POST' },
+    { value: '/api/resource/Stock Entry', label: 'Create Stock Entry', method: 'POST' },
+    { value: '/api/resource/Delivery Note', label: 'Create Delivery Note', method: 'POST' },
+    { value: '/api/resource/Purchase Receipt', label: 'Create Purchase Receipt', method: 'POST' },
+    { value: '/api/resource/Journal Entry', label: 'Create Journal Entry', method: 'POST' },
+    { value: '/api/resource/Account', label: 'Create Account', method: 'POST' },
+    { value: '/api/resource/Cost Center', label: 'Create Cost Center', method: 'POST' },
+    { value: '/api/resource/Project', label: 'Create Project', method: 'POST' },
+    { value: '/api/resource/Task', label: 'Create Task', method: 'POST' },
+    { value: '/api/resource/ToDo', label: 'Create ToDo', method: 'POST' },
+    { value: '/api/resource/Event', label: 'Create Event', method: 'POST' },
+    { value: '/api/resource/Communication', label: 'Create Communication', method: 'POST' },
+    { value: '/api/resource/File', label: 'Create File', method: 'POST' },
+    { value: '/api/method/frappe.client.get_value', label: 'Get Value', method: 'POST' },
+    { value: '/api/method/frappe.client.set_value', label: 'Set Value', method: 'POST' },
+    { value: '/api/method/frappe.client.insert', label: 'Insert Document', method: 'POST' },
+    { value: '/api/method/frappe.client.update', label: 'Update Document', method: 'POST' },
+    { value: '/api/method/frappe.client.delete', label: 'Delete Document', method: 'POST' },
+    
+    // PUT endpoints
+    { value: '/api/resource/DocType/{name}', label: 'Update DocType', method: 'PUT' },
+    { value: '/api/resource/User/{name}', label: 'Update User', method: 'PUT' },
+    { value: '/api/resource/Customer/{name}', label: 'Update Customer', method: 'PUT' },
+    { value: '/api/resource/Item/{name}', label: 'Update Item', method: 'PUT' },
+    { value: '/api/resource/Sales Invoice/{name}', label: 'Update Sales Invoice', method: 'PUT' },
+    { value: '/api/resource/Purchase Invoice/{name}', label: 'Update Purchase Invoice', method: 'PUT' },
+    { value: '/api/resource/Quotation/{name}', label: 'Update Quotation', method: 'PUT' },
+    { value: '/api/resource/Sales Order/{name}', label: 'Update Sales Order', method: 'PUT' },
+    { value: '/api/resource/Purchase Order/{name}', label: 'Update Purchase Order', method: 'PUT' },
+    { value: '/api/resource/Lead/{name}', label: 'Update Lead', method: 'PUT' },
+    { value: '/api/resource/Opportunity/{name}', label: 'Update Opportunity', method: 'PUT' },
+    { value: '/api/resource/Contact/{name}', label: 'Update Contact', method: 'PUT' },
+    { value: '/api/resource/Address/{name}', label: 'Update Address', method: 'PUT' },
+    { value: '/api/resource/Company/{name}', label: 'Update Company', method: 'PUT' },
+    { value: '/api/resource/Warehouse/{name}', label: 'Update Warehouse', method: 'PUT' },
+    { value: '/api/resource/Stock Entry/{name}', label: 'Update Stock Entry', method: 'PUT' },
+    { value: '/api/resource/Delivery Note/{name}', label: 'Update Delivery Note', method: 'PUT' },
+    { value: '/api/resource/Purchase Receipt/{name}', label: 'Update Purchase Receipt', method: 'PUT' },
+    { value: '/api/resource/Journal Entry/{name}', label: 'Update Journal Entry', method: 'PUT' },
+    { value: '/api/resource/Account/{name}', label: 'Update Account', method: 'PUT' },
+    { value: '/api/resource/Cost Center/{name}', label: 'Update Cost Center', method: 'PUT' },
+    { value: '/api/resource/Project/{name}', label: 'Update Project', method: 'PUT' },
+    { value: '/api/resource/Task/{name}', label: 'Update Task', method: 'PUT' },
+    { value: '/api/resource/ToDo/{name}', label: 'Update ToDo', method: 'PUT' },
+    { value: '/api/resource/Event/{name}', label: 'Update Event', method: 'PUT' },
+    { value: '/api/resource/Communication/{name}', label: 'Update Communication', method: 'PUT' },
+    { value: '/api/resource/File/{name}', label: 'Update File', method: 'PUT' }
+  ]
+  
+  // New connection form
+  const [showNewConnection, setShowNewConnection] = useState(false)
+  const [newConnection, setNewConnection] = useState({
+    name: '',
+    baseUrl: '',
+    apiKey: '',
+    apiSecret: ''
+  })
+  const [creatingConnection, setCreatingConnection] = useState(false)
+
+  // Load connections and custom endpoints on component mount
+  useEffect(() => {
+    loadConnections()
+    loadCustomEndpoints()
+  }, [])
+
+  const loadCustomEndpoints = () => {
+    const saved = localStorage.getItem('erpnext-custom-endpoints')
+    if (saved) {
+      try {
+        setCustomEndpoints(JSON.parse(saved))
+      } catch (error) {
+        console.error('Failed to load custom endpoints:', error)
+      }
+    }
+  }
+
+  const saveCustomEndpoints = (endpoints) => {
+    localStorage.setItem('erpnext-custom-endpoints', JSON.stringify(endpoints))
+  }
+
+  const loadConnections = async () => {
+    try {
+      const res = await axios.get('http://localhost:4000/api/connections')
+      if (res.data.ok) {
+        setConnections(res.data.data)
+        if (res.data.data.length > 0 && !selectedConnection) {
+          setSelectedConnection(res.data.data[0]._id)
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to load connections')
+    }
+  }
+
+  const createConnection = async () => {
+    if (!newConnection.name || !newConnection.baseUrl || !newConnection.apiKey || !newConnection.apiSecret) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    setCreatingConnection(true)
+    try {
+      const res = await axios.post('http://localhost:4000/api/connections', newConnection)
+      if (res.data.ok) {
+        toast.success('Connection created successfully')
+        setNewConnection({ name: '', baseUrl: '', apiKey: '', apiSecret: '' })
+        setShowNewConnection(false)
+        await loadConnections()
+        setSelectedConnection(res.data.data._id)
+      } else {
+        toast.error(res.data.message)
+      }
+    } catch (error) {
+      toast.error('Failed to create connection')
+    } finally {
+      setCreatingConnection(false)
+    }
+  }
+
+  const handleEndpointSelect = (selectedEndpoint) => {
+    // Look in both common and custom endpoints
+    const allEndpoints = [...commonEndpoints, ...customEndpoints]
+    const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
+    if (endpointData) {
+      setEndpoint(endpointData.value)
+      setMethod(endpointData.method)
+    }
+  }
+
+  const handleMethodChange = (newMethod) => {
+    setMethod(newMethod)
+    setEndpoint('') // Clear endpoint when method changes
+  }
+
+  const addCustomEndpoint = () => {
+    if (customEndpoint.trim()) {
+      const newCustomEndpoint = {
+        value: customEndpoint.trim(),
+        label: `Custom: ${customEndpoint.trim()}`,
+        method: method // Use the currently selected method
+      }
+      
+      // Check if endpoint already exists
+      const exists = [...commonEndpoints, ...customEndpoints].some(ep => ep.value === newCustomEndpoint.value)
+      if (exists) {
+        toast.error('This endpoint already exists')
+        return
+      }
+      
+      // Add to custom endpoints
+      const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
+      setCustomEndpoints(updatedCustomEndpoints)
+      saveCustomEndpoints(updatedCustomEndpoints)
+      
+      // Set as current endpoint
+      setEndpoint(newCustomEndpoint.value)
+      setShowCustomEndpoint(false)
+      setCustomEndpoint('')
+      toast.success('Custom endpoint added and selected')
+    } else {
+      toast.error('Please enter a valid endpoint')
+    }
+  }
+
+  // Filter endpoints based on selected method
+  const getFilteredEndpoints = () => {
+    const allEndpoints = [...commonEndpoints, ...customEndpoints]
+    return allEndpoints.filter(ep => ep.method === method)
+  }
+
+  const removeCustomEndpoint = (endpointToRemove) => {
+    const updatedCustomEndpoints = customEndpoints.filter(ep => ep.value !== endpointToRemove)
+    setCustomEndpoints(updatedCustomEndpoints)
+    saveCustomEndpoints(updatedCustomEndpoints)
+    toast.success('Custom endpoint removed')
+  }
+
+  const sendRequest = async () => {
+    if (!selectedConnection) {
+      toast.error('Please select a connection')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const requestData = {
+        connectionId: selectedConnection,
+        method: method,
+        path: endpoint,
+        query: method === 'GET' ? {} : undefined,
+        body: method !== 'GET' ? JSON.parse(requestBody) : undefined
+      }
+
+      const res = await axios.post('http://localhost:4000/api/erp/send', requestData)
+      
+      if (res.data.ok) {
+        setResponse({
+          status: res.data.data.status,
+          headers: res.data.data.headers,
+          data: res.data.data.data,
+          duration: res.data.data.durationMs,
+          connectionName: res.data.data.connectionName
+        })
+        toast.success('Request sent successfully')
+      } else {
+        setResponse({
+          status: 'Error',
+          message: res.data.message,
+          error: res.data.error
+        })
+        toast.error(res.data.message)
+      }
+    } catch (error) {
+      const errorResponse = {
+        status: 'Error',
+        message: error.response?.data?.message || error.message,
+        error: error.response?.data || error.message
+      }
+      setResponse(errorResponse)
+      toast.error('Request failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-right" />
+      
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                ERPNext API Tester
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className={`flex items-center space-x-2 ${selectedConnection ? 'text-green-600' : 'text-gray-400'}`}>
+                <div className={`w-2 h-2 rounded-full ${selectedConnection ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className="text-sm font-medium">
+                  {selectedConnection ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Connection Panel */}
+            <div className="card p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                ERPNext Connection
+              </h2>
+              
+              {!showNewConnection ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Connection
+                    </label>
+                    <select 
+                      className="input"
+                      value={selectedConnection}
+                      onChange={(e) => setSelectedConnection(e.target.value)}
+                    >
+                      <option value="">Select a connection...</option>
+                      {connections.map(conn => (
+                        <option key={conn._id} value={conn._id}>
+                          {conn.name} - {conn.baseUrl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      className="btn btn-secondary flex-1"
+                      onClick={loadConnections}
+                    >
+                      Refresh
+                    </button>
+                    <button 
+                      className="btn btn-primary flex-1"
+                      onClick={() => setShowNewConnection(true)}
+                    >
+                      New Connection
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Connection Name
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={newConnection.name}
+                      onChange={(e) => setNewConnection({...newConnection, name: e.target.value})}
+                      placeholder="My ERPNext Connection"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ERPNext URL
+                    </label>
+                    <input
+                      type="url"
+                      className="input"
+                      value={newConnection.baseUrl}
+                      onChange={(e) => setNewConnection({...newConnection, baseUrl: e.target.value})}
+                      placeholder="https://your-erpnext-instance.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      API Key
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={newConnection.apiKey}
+                      onChange={(e) => setNewConnection({...newConnection, apiKey: e.target.value})}
+                      placeholder="Your API Key"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      API Secret
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={newConnection.apiSecret}
+                      onChange={(e) => setNewConnection({...newConnection, apiSecret: e.target.value})}
+                      placeholder="Your API Secret"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      className="btn btn-secondary flex-1"
+                      onClick={() => setShowNewConnection(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="btn btn-primary flex-1"
+                      onClick={createConnection}
+                      disabled={creatingConnection}
+                    >
+                      {creatingConnection ? 'Creating...' : 'Create & Connect'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* API Testing Panel */}
+            <div className="card p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                API Testing
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Endpoint
+                  </label>
+                  <select 
+                    className="input"
+                    value={endpoint}
+                    onChange={(e) => handleEndpointSelect(e.target.value)}
+                  >
+                    <option value="">Choose an endpoint...</option>
+                    
+                    {/* Filtered Endpoints based on selected method */}
+                    {getFilteredEndpoints().map((ep, index) => (
+                      <option key={index} value={ep.value}>
+                        {ep.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {!showCustomEndpoint ? (
+                  <div className="flex space-x-2">
+                    <button 
+                      className="btn btn-secondary flex-1"
+                      onClick={() => setShowCustomEndpoint(true)}
+                    >
+                      Add Custom Endpoint
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom Endpoint
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        className="input flex-1"
+                        value={customEndpoint}
+                        onChange={(e) => setCustomEndpoint(e.target.value)}
+                        placeholder="/api/resource/YourCustomDocType"
+                      />
+                      <button 
+                        className="btn btn-primary"
+                        onClick={addCustomEndpoint}
+                      >
+                        Add
+                      </button>
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={() => setShowCustomEndpoint(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Current Endpoint
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={endpoint}
+                    onChange={(e) => setEndpoint(e.target.value)}
+                    placeholder="/api/method/ping"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Method
+                  </label>
+                  <select 
+                    className="input"
+                    value={method}
+                    onChange={(e) => handleMethodChange(e.target.value)}
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+      <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Request Body (JSON)
+                  </label>
+                  <textarea
+                    className="input min-h-[120px] resize-none"
+                    value={requestBody}
+                    onChange={(e) => setRequestBody(e.target.value)}
+                    placeholder='{"field": "value"}'
+                  />
+      </div>
+                <button 
+                  className="btn btn-primary w-full"
+                  onClick={sendRequest}
+                  disabled={loading || !selectedConnection}
+                >
+                  {loading ? 'Sending...' : 'Send Request'}
+        </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Response Panel */}
+          <div className="mt-6">
+            <div className="card p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Response
+              </h2>
+              <div className="bg-gray-50 rounded-md p-4 min-h-[200px]">
+                <pre className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {JSON.stringify(response, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      </div>
+  )
+}
+
+export default App
