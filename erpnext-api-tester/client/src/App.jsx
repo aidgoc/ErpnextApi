@@ -235,18 +235,33 @@ function App() {
     }
   }
 
+  const handleMethodChange = (newMethod) => {
+    setMethod(newMethod)
+    // Clear endpoint when method changes to force user to select new endpoint
+    setEndpoint('')
+    
+    // If switching to PUT, show a helpful message about document names
+    if (newMethod === 'PUT') {
+      toast.info('For PUT requests: Use the actual document name (e.g., CUST-00001) in the URL and request body')
+    }
+  }
+
   const getDefaultRequestBody = (endpoint, method) => {
     // Generate appropriate default request body based on endpoint and method
     if (endpoint.includes('/api/resource/')) {
       const docType = endpoint.split('/api/resource/')[1].split('/')[0]
-      return JSON.stringify({
-        "doctype": docType,
-        "name": method === 'PUT' ? "DOC-001" : undefined,
-        "data": {
-          "field1": "value1",
-          "field2": "value2"
-        }
-      }, null, 2)
+      
+      // For ERPNext, send data directly as document fields, not wrapped in doctype/data
+      if (method === 'POST') {
+        // POST: Create new document - send document fields directly
+        return getDocTypeFields(docType, 'POST')
+      } else if (method === 'PUT') {
+        // PUT: Update existing document - include name field
+        return getDocTypeFields(docType, 'PUT')
+      } else {
+        // GET/DELETE: Usually no body needed, but provide empty object
+        return JSON.stringify({}, null, 2)
+      }
     } else if (endpoint.includes('/api/method/')) {
       return JSON.stringify({
         "args": [],
@@ -254,6 +269,155 @@ function App() {
       }, null, 2)
     }
     return '{"field": "value"}'
+  }
+
+  const getDocTypeFields = (docType, method) => {
+    // Generate appropriate fields based on DocType
+    // For PUT requests: 
+    //   1. URL should be: /api/resource/Customer/CUST-00001 (with actual document name)
+    //   2. Request body 'name' field must match the document name in URL
+    // For POST requests: 'name' field is not needed (ERPNext auto-generates it)
+    const commonFields = {
+      'Customer': {
+        POST: {
+          "customer_name": "Sample Customer",
+          "customer_type": "Individual",
+          "territory": "All Territories",
+          "customer_group": "All Customer Groups"
+        },
+        PUT: {
+          "name": "CUST-00001",
+          "customer_name": "Updated Customer",
+          "customer_type": "Individual",
+          "territory": "All Territories"
+        }
+      },
+      'User': {
+        POST: {
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@example.com",
+          "user_type": "System User",
+          "send_welcome_email": 0
+        },
+        PUT: {
+          "name": "john.doe@example.com",
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@example.com"
+        }
+      },
+      'Item': {
+        POST: {
+          "item_code": "ITEM-001",
+          "item_name": "Sample Item",
+          "item_group": "All Item Groups",
+          "is_stock_item": 1,
+          "is_sales_item": 1
+        },
+        PUT: {
+          "name": "ITEM-001",
+          "item_code": "ITEM-001",
+          "item_name": "Updated Item",
+          "item_group": "All Item Groups"
+        }
+      },
+      'Sales Invoice': {
+        POST: {
+          "customer": "CUST-001",
+          "posting_date": new Date().toISOString().split('T')[0],
+          "due_date": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          "items": [{
+            "item_code": "ITEM-001",
+            "qty": 1,
+            "rate": 100
+          }]
+        },
+        PUT: {
+          "name": "SINV-001",
+          "customer": "CUST-001",
+          "posting_date": new Date().toISOString().split('T')[0]
+        }
+      },
+      'Purchase Invoice': {
+        POST: {
+          "supplier": "SUP-001",
+          "posting_date": new Date().toISOString().split('T')[0],
+          "due_date": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          "items": [{
+            "item_code": "ITEM-001",
+            "qty": 1,
+            "rate": 100
+          }]
+        },
+        PUT: {
+          "name": "PINV-001",
+          "supplier": "SUP-001",
+          "posting_date": new Date().toISOString().split('T')[0]
+        }
+      },
+      'Lead': {
+        POST: {
+          "lead_name": "Sample Lead",
+          "email_id": "lead@example.com",
+          "mobile_no": "1234567890",
+          "source": "Website"
+        },
+        PUT: {
+          "name": "LEAD-001",
+          "lead_name": "Updated Lead",
+          "email_id": "lead@example.com"
+        }
+      },
+      'Contact': {
+        POST: {
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "email_id": "jane.smith@example.com",
+          "mobile_no": "1234567890"
+        },
+        PUT: {
+          "name": "CON-001",
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "email_id": "jane.smith@example.com"
+        }
+      },
+      'Address': {
+        POST: {
+          "address_title": "Home Address",
+          "address_type": "Billing",
+          "address_line1": "123 Main Street",
+          "city": "New York",
+          "state": "NY",
+          "pincode": "10001",
+          "country": "United States"
+        },
+        PUT: {
+          "name": "ADD-001",
+          "address_title": "Updated Address",
+          "address_type": "Billing"
+        }
+      }
+    }
+
+    // Return specific fields for known DocTypes, or generic fields for unknown ones
+    if (commonFields[docType]) {
+      return JSON.stringify(commonFields[docType][method], null, 2)
+    } else {
+      // Generic fields for unknown DocTypes
+      if (method === 'POST') {
+        return JSON.stringify({
+          "name": `Sample ${docType}`,
+          "title": `Sample ${docType} Title`
+        }, null, 2)
+      } else {
+        return JSON.stringify({
+          "name": `${docType.toUpperCase()}-001`,
+          "title": `Updated ${docType} Title`
+        }, null, 2)
+      }
+    }
   }
 
   const handleMethodChange = (newMethod) => {
@@ -594,6 +758,11 @@ function App() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Request Body (JSON)
+                      {method === 'PUT' && (
+                        <span className="text-orange-600 text-xs ml-2">
+                          ⚠️ For PUT: Use actual document name (e.g., CUST-00001) in both URL and 'name' field
+                        </span>
+                      )}
                     </label>
                     <textarea
                       className="input min-h-[120px] resize-none"
