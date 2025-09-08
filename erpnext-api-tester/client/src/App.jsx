@@ -407,8 +407,7 @@ function App() {
           // Also update the document name state
           setDocumentName(documentName)
           
-          // Show a subtle notification
-          toast.success(`Endpoint updated: ${documentName}`, { duration: 2000 })
+          // Silent update - no notification
           
           console.log(`Updated endpoint to: ${endpoint.includes('{name}') ? endpoint.replace('{name}', encodedName) : `/api/resource/${docType}/${encodedName}`} for ${docType}`)
         }
@@ -910,14 +909,9 @@ function App() {
                   </div>
                 )}
                 
-                <div>
+      <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Current Endpoint
-                    {method === 'PUT' && (
-                      <span className="text-green-600 text-xs ml-2">
-                        🔄 Auto-updates when you type in request body
-                      </span>
-                    )}
                   </label>
                   <input
                     type="text"
@@ -926,15 +920,12 @@ function App() {
                     onChange={(e) => setEndpoint(e.target.value)}
                     placeholder="/api/method/ping"
                   />
-                </div>
+      </div>
 
                 {method === 'PUT' && endpoint.includes('{name}') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Document Identifier (Optional)
-                      <span className="text-green-600 text-xs ml-2">
-                        ✨ Or just enter the identifier in the request body below - URL updates automatically for all modules!
-                      </span>
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -953,9 +944,6 @@ function App() {
                         Find & Update
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      This will search for the exact document. Or simply type the identifier in the request body below.
-                    </p>
                   </div>
                 )}
 
@@ -963,11 +951,6 @@ function App() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Request Body (JSON)
-                      {method === 'PUT' && (
-                        <span className="text-blue-600 text-xs ml-2">
-                          💡 For PUT: Enter document identifier in request body - URL updates automatically for all modules
-                        </span>
-                      )}
                     </label>
                     <textarea
                       className="input min-h-[120px] resize-none"
