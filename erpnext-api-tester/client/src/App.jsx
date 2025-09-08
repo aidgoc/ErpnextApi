@@ -259,13 +259,62 @@ function App() {
     }
   }
 
-  const handleDocumentNameChange = (newDocumentName) => {
+  const handleDocumentNameChange = async (newDocumentName) => {
     setDocumentName(newDocumentName)
     
     // If we have an endpoint with {name} placeholder, update it
     if (endpoint.includes('{name}')) {
       const updatedEndpoint = endpoint.replace('{name}', newDocumentName)
       setEndpoint(updatedEndpoint)
+    }
+    
+    // For PUT requests, try to get the exact document name first
+    if (method === 'PUT' && newDocumentName && selectedConnection) {
+      try {
+        // Get the connection details
+        const connection = connections.find(conn => conn._id === selectedConnection)
+        if (connection) {
+          // Try to fetch the existing document to get its exact name
+          const docType = endpoint.split('/api/resource/')[1]?.split('/')[0]
+          if (docType) {
+            const searchUrl = `/api/resource/${docType}?filters=[["name","=","${newDocumentName}"]]&fields=["name"]&limit_page_length=1`
+            
+            const response = await fetch(`${connection.baseUrl}${searchUrl}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `token ${connection.apiKey}:${connection.apiSecret}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              if (data.data && data.data.length > 0) {
+                const exactName = data.data[0].name
+                console.log(`Found exact document name: ${exactName}`)
+                
+                // Update endpoint with exact name
+                const exactEndpoint = endpoint.replace('{name}', exactName)
+                setEndpoint(exactEndpoint)
+                
+                // Update request body with exact name
+                try {
+                  const currentBody = JSON.parse(requestBody)
+                  currentBody.name = exactName
+                  setRequestBody(JSON.stringify(currentBody, null, 2))
+                } catch (e) {
+                  setRequestBody(JSON.stringify({ name: exactName }, null, 2))
+                }
+                
+                toast.success(`Found existing document: ${exactName}`)
+                return
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Could not fetch exact document name, using provided name')
+      }
     }
     
     // Update request body if it's a PUT request
@@ -790,16 +839,29 @@ function App() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Document Name
                       <span className="text-blue-600 text-xs ml-2">
-                        💡 Enter the actual document name to replace {`{name}`} in the URL
+                        💡 Enter the document name to replace {`{name}`} in the URL
                       </span>
                     </label>
-                    <input
-                      type="text"
-                      className="input"
-                      value={documentName}
-                      onChange={(e) => handleDocumentNameChange(e.target.value)}
-                      placeholder="e.g., CUST-00001, Yadav, john.doe@example.com"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="input flex-1"
+                        value={documentName}
+                        onChange={(e) => setDocumentName(e.target.value)}
+                        placeholder="e.g., Yadav, CUST-00001, john.doe@example.com"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDocumentNameChange(documentName)}
+                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        disabled={!documentName || !selectedConnection}
+                      >
+                        Find & Update
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      This will search for the exact document name and update both URL and request body
+                    </p>
                   </div>
                 )}
 
