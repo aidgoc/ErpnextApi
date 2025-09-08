@@ -115,7 +115,36 @@ function App() {
     { value: '/api/resource/ToDo/{name}', label: 'Update ToDo', method: 'PUT' },
     { value: '/api/resource/Event/{name}', label: 'Update Event', method: 'PUT' },
     { value: '/api/resource/Communication/{name}', label: 'Update Communication', method: 'PUT' },
-    { value: '/api/resource/File/{name}', label: 'Update File', method: 'PUT' }
+    { value: '/api/resource/File/{name}', label: 'Update File', method: 'PUT' },
+
+    // DELETE endpoints
+    { value: '/api/resource/DocType/{name}', label: 'Delete DocType', method: 'DELETE' },
+    { value: '/api/resource/User/{name}', label: 'Delete User', method: 'DELETE' },
+    { value: '/api/resource/Customer/{name}', label: 'Delete Customer', method: 'DELETE' },
+    { value: '/api/resource/Item/{name}', label: 'Delete Item', method: 'DELETE' },
+    { value: '/api/resource/Sales Invoice/{name}', label: 'Delete Sales Invoice', method: 'DELETE' },
+    { value: '/api/resource/Purchase Invoice/{name}', label: 'Delete Purchase Invoice', method: 'DELETE' },
+    { value: '/api/resource/Quotation/{name}', label: 'Delete Quotation', method: 'DELETE' },
+    { value: '/api/resource/Sales Order/{name}', label: 'Delete Sales Order', method: 'DELETE' },
+    { value: '/api/resource/Purchase Order/{name}', label: 'Delete Purchase Order', method: 'DELETE' },
+    { value: '/api/resource/Lead/{name}', label: 'Delete Lead', method: 'DELETE' },
+    { value: '/api/resource/Opportunity/{name}', label: 'Delete Opportunity', method: 'DELETE' },
+    { value: '/api/resource/Contact/{name}', label: 'Delete Contact', method: 'DELETE' },
+    { value: '/api/resource/Address/{name}', label: 'Delete Address', method: 'DELETE' },
+    { value: '/api/resource/Company/{name}', label: 'Delete Company', method: 'DELETE' },
+    { value: '/api/resource/Warehouse/{name}', label: 'Delete Warehouse', method: 'DELETE' },
+    { value: '/api/resource/Stock Entry/{name}', label: 'Delete Stock Entry', method: 'DELETE' },
+    { value: '/api/resource/Delivery Note/{name}', label: 'Delete Delivery Note', method: 'DELETE' },
+    { value: '/api/resource/Purchase Receipt/{name}', label: 'Delete Purchase Receipt', method: 'DELETE' },
+    { value: '/api/resource/Journal Entry/{name}', label: 'Delete Journal Entry', method: 'DELETE' },
+    { value: '/api/resource/Account/{name}', label: 'Delete Account', method: 'DELETE' },
+    { value: '/api/resource/Cost Center/{name}', label: 'Delete Cost Center', method: 'DELETE' },
+    { value: '/api/resource/Project/{name}', label: 'Delete Project', method: 'DELETE' },
+    { value: '/api/resource/Task/{name}', label: 'Delete Task', method: 'DELETE' },
+    { value: '/api/resource/ToDo/{name}', label: 'Delete ToDo', method: 'DELETE' },
+    { value: '/api/resource/Event/{name}', label: 'Delete Event', method: 'DELETE' },
+    { value: '/api/resource/Communication/{name}', label: 'Delete Communication', method: 'DELETE' },
+    { value: '/api/resource/File/{name}', label: 'Delete File', method: 'DELETE' }
   ]
   
   // New connection form
@@ -194,13 +223,43 @@ function App() {
     const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
     if (endpointData) {
       setEndpoint(endpointData.value)
-      setMethod(endpointData.method)
+      // Don't change the method - keep the user's selected method
+      // setMethod(endpointData.method) // Removed this line
+      
+      // Set appropriate default request body based on current method and endpoint
+      if (method === 'POST' || method === 'PUT') {
+        setRequestBody(getDefaultRequestBody(endpointData.value, method))
+      } else {
+        setRequestBody('{"field": "value"}')
+      }
     }
+  }
+
+  const getDefaultRequestBody = (endpoint, method) => {
+    // Generate appropriate default request body based on endpoint and method
+    if (endpoint.includes('/api/resource/')) {
+      const docType = endpoint.split('/api/resource/')[1].split('/')[0]
+      return JSON.stringify({
+        "doctype": docType,
+        "name": method === 'PUT' ? "DOC-001" : undefined,
+        "data": {
+          "field1": "value1",
+          "field2": "value2"
+        }
+      }, null, 2)
+    } else if (endpoint.includes('/api/method/')) {
+      return JSON.stringify({
+        "args": [],
+        "kwargs": {}
+      }, null, 2)
+    }
+    return '{"field": "value"}'
   }
 
   const handleMethodChange = (newMethod) => {
     setMethod(newMethod)
-    setEndpoint('') // Clear endpoint when method changes
+    // Clear endpoint when method changes to force user to select new endpoint
+    setEndpoint('')
   }
 
   const addCustomEndpoint = () => {
@@ -249,6 +308,11 @@ function App() {
   const sendRequest = async () => {
     if (!selectedConnection) {
       toast.error('Please select a connection')
+      return
+    }
+
+    if (!endpoint) {
+      toast.error('Please select an endpoint')
       return
     }
 
@@ -441,6 +505,22 @@ function App() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Method
+                  </label>
+                  <select 
+                    className="input"
+                    value={method}
+                    onChange={(e) => handleMethodChange(e.target.value)}
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Select Endpoint
                   </label>
                   <select 
@@ -509,39 +589,28 @@ function App() {
                     placeholder="/api/method/ping"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Method
-                  </label>
-                  <select 
-                    className="input"
-                    value={method}
-                    onChange={(e) => handleMethodChange(e.target.value)}
-                  >
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="DELETE">DELETE</option>
-                  </select>
-                </div>
-      <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Request Body (JSON)
-                  </label>
-                  <textarea
-                    className="input min-h-[120px] resize-none"
-                    value={requestBody}
-                    onChange={(e) => setRequestBody(e.target.value)}
-                    placeholder='{"field": "value"}'
-                  />
-      </div>
+
+                {(method === 'POST' || method === 'PUT') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Request Body (JSON)
+                    </label>
+                    <textarea
+                      className="input min-h-[120px] resize-none"
+                      value={requestBody}
+                      onChange={(e) => setRequestBody(e.target.value)}
+                      placeholder='{"field": "value"}'
+                    />
+                  </div>
+                )}
+
                 <button 
                   className="btn btn-primary w-full"
                   onClick={sendRequest}
-                  disabled={loading || !selectedConnection}
+                  disabled={loading || !selectedConnection || !endpoint}
                 >
                   {loading ? 'Sending...' : 'Send Request'}
-        </button>
+                </button>
               </div>
             </div>
           </div>
@@ -561,7 +630,7 @@ function App() {
           </div>
         </div>
       </main>
-      </div>
+    </div>
   )
 }
 
