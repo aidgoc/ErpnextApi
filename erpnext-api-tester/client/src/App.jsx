@@ -334,28 +334,87 @@ function App() {
   const handleRequestBodyChange = (newRequestBody) => {
     setRequestBody(newRequestBody)
     
-    // If it's a PUT request and we have a {name} placeholder in the endpoint
-    if (method === 'PUT' && endpoint.includes('{name}')) {
+    // If it's a PUT request, try to update the endpoint
+    if (method === 'PUT') {
       try {
         const bodyData = JSON.parse(newRequestBody)
         
-        // Check if the body has a 'name' field
+        // Check for different possible name fields based on DocType
+        let documentName = null
+        
+        // Extract DocType from endpoint
+        const docType = endpoint.split('/api/resource/')[1]?.split('/')[0]
+        
+        // Different DocTypes use different field names for the document identifier
         if (bodyData.name) {
-          const documentName = bodyData.name
-          
+          documentName = bodyData.name
+        } else if (docType === 'User' && bodyData.email) {
+          documentName = bodyData.email
+        } else if (docType === 'Item' && bodyData.item_code) {
+          documentName = bodyData.item_code
+        } else if (docType === 'Lead' && bodyData.lead_name) {
+          documentName = bodyData.lead_name
+        } else if (docType === 'Contact' && (bodyData.first_name || bodyData.last_name)) {
+          documentName = bodyData.first_name + (bodyData.last_name ? ` ${bodyData.last_name}` : '')
+        } else if (docType === 'Address' && bodyData.address_title) {
+          documentName = bodyData.address_title
+        } else if (docType === 'Company' && bodyData.company_name) {
+          documentName = bodyData.company_name
+        } else if (docType === 'Warehouse' && bodyData.warehouse_name) {
+          documentName = bodyData.warehouse_name
+        } else if (docType === 'Account' && bodyData.account_name) {
+          documentName = bodyData.account_name
+        } else if (docType === 'Cost Center' && bodyData.cost_center_name) {
+          documentName = bodyData.cost_center_name
+        } else if (docType === 'Project' && bodyData.project_name) {
+          documentName = bodyData.project_name
+        } else if (docType === 'Sales Invoice' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Purchase Invoice' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Quotation' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Sales Order' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Purchase Order' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Delivery Note' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Purchase Receipt' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Journal Entry' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Stock Entry' && bodyData.name) {
+          documentName = bodyData.name
+        } else if (docType === 'Opportunity' && bodyData.opportunity_from) {
+          documentName = bodyData.opportunity_from
+        }
+        
+        if (documentName) {
           // URL encode the document name for the endpoint
           const encodedName = encodeURIComponent(documentName)
-          const updatedEndpoint = endpoint.replace('{name}', encodedName)
-          setEndpoint(updatedEndpoint)
+          
+          // Check if endpoint has {name} placeholder
+          if (endpoint.includes('{name}')) {
+            const updatedEndpoint = endpoint.replace('{name}', encodedName)
+            setEndpoint(updatedEndpoint)
+          } else {
+            // If no placeholder, construct the endpoint from scratch
+            const baseEndpoint = `/api/resource/${docType}/${encodedName}`
+            setEndpoint(baseEndpoint)
+          }
           
           // Also update the document name state
           setDocumentName(documentName)
           
-          console.log(`Updated endpoint to: ${updatedEndpoint}`)
+          // Show a subtle notification
+          toast.success(`Endpoint updated: ${documentName}`, { duration: 2000 })
+          
+          console.log(`Updated endpoint to: ${endpoint.includes('{name}') ? endpoint.replace('{name}', encodedName) : `/api/resource/${docType}/${encodedName}`} for ${docType}`)
         }
       } catch (e) {
         // If JSON is invalid, don't update the endpoint
-        console.log('Invalid JSON in request body')
+        console.log('Invalid JSON in request body:', e.message)
       }
     }
   }
@@ -854,6 +913,11 @@ function App() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Current Endpoint
+                    {method === 'PUT' && (
+                      <span className="text-green-600 text-xs ml-2">
+                        🔄 Auto-updates when you type in request body
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -867,9 +931,9 @@ function App() {
                 {method === 'PUT' && endpoint.includes('{name}') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Name (Optional)
+                      Document Identifier (Optional)
                       <span className="text-green-600 text-xs ml-2">
-                        ✨ Or just enter the name in the request body below - URL updates automatically!
+                        ✨ Or just enter the identifier in the request body below - URL updates automatically for all modules!
                       </span>
                     </label>
                     <div className="flex gap-2">
@@ -878,7 +942,7 @@ function App() {
                         className="input flex-1"
                         value={documentName}
                         onChange={(e) => setDocumentName(e.target.value)}
-                        placeholder="e.g., Manoj Yadav, CUST-00001, john.doe@example.com"
+                        placeholder="e.g., Manoj Yadav, john.doe@example.com, ITEM-001, LEAD-001"
                       />
                       <button
                         type="button"
@@ -890,7 +954,7 @@ function App() {
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      This will search for the exact document name. Or simply type the name in the request body below.
+                      This will search for the exact document. Or simply type the identifier in the request body below.
                     </p>
                   </div>
                 )}
@@ -901,7 +965,7 @@ function App() {
                       Request Body (JSON)
                       {method === 'PUT' && (
                         <span className="text-blue-600 text-xs ml-2">
-                          💡 For PUT: Enter document name in 'name' field - URL will update automatically
+                          💡 For PUT: Enter document identifier in request body - URL updates automatically for all modules
                         </span>
                       )}
                     </label>
