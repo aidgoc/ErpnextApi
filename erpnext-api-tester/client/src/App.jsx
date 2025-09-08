@@ -13,6 +13,7 @@ function App() {
     message: 'Select a connection and send a request'
   })
   const [loading, setLoading] = useState(false)
+  const [documentName, setDocumentName] = useState('')
   
   // Endpoint management
   const [showCustomEndpoint, setShowCustomEndpoint] = useState(false)
@@ -226,15 +227,11 @@ function App() {
       
       // Smart endpoint replacement for PUT requests
       if (method === 'PUT' && endpointData.value.includes('{name}')) {
-        if (endpointData.value.includes('/api/resource/Customer/{name}')) {
-          finalEndpoint = '/api/resource/Customer/Yadav'
-        } else if (endpointData.value.includes('/api/resource/User/{name}')) {
-          finalEndpoint = '/api/resource/User/john.doe@example.com'
-        } else if (endpointData.value.includes('/api/resource/Item/{name}')) {
-          finalEndpoint = '/api/resource/Item/ITEM-001'
+        // If user has entered a document name, use it; otherwise keep placeholder
+        if (documentName) {
+          finalEndpoint = endpointData.value.replace('{name}', documentName)
         } else {
-          // Generic replacement
-          finalEndpoint = endpointData.value.replace('{name}', 'DOC-001')
+          finalEndpoint = endpointData.value
         }
       }
       
@@ -259,6 +256,28 @@ function App() {
     // If switching to PUT, show a helpful message about document names
     if (newMethod === 'PUT') {
       toast.info('For PUT requests: Use the actual document name (e.g., CUST-00001) in the URL and request body')
+    }
+  }
+
+  const handleDocumentNameChange = (newDocumentName) => {
+    setDocumentName(newDocumentName)
+    
+    // If we have an endpoint with {name} placeholder, update it
+    if (endpoint.includes('{name}')) {
+      const updatedEndpoint = endpoint.replace('{name}', newDocumentName)
+      setEndpoint(updatedEndpoint)
+    }
+    
+    // Update request body if it's a PUT request
+    if (method === 'PUT' && newDocumentName) {
+      try {
+        const currentBody = JSON.parse(requestBody)
+        currentBody.name = newDocumentName
+        setRequestBody(JSON.stringify(currentBody, null, 2))
+      } catch (e) {
+        // If JSON is invalid, just set a basic structure
+        setRequestBody(JSON.stringify({ name: newDocumentName }, null, 2))
+      }
     }
   }
 
@@ -294,19 +313,6 @@ function App() {
     //   2. Request body 'name' field must match the document name in URL
     // For POST requests: 'name' field is not needed (ERPNext auto-generates it)
     
-    // Smart detection for common customer names
-    const smartCustomerFields = {
-      'Yadav': {
-        PUT: {
-          "name": "Yadav",
-          "customer_name": "Yadav",
-          "customer_type": "Company",
-          "customer_group": "All Customer Groups",
-          "territory": "All Territories"
-        }
-      }
-    }
-    
     const commonFields = {
       'Customer': {
         POST: {
@@ -316,9 +322,9 @@ function App() {
           "customer_group": "All Customer Groups"
         },
         PUT: {
-          "name": "Yadav",
-          "customer_name": "Yadav",
-          "customer_type": "Company",
+          "name": "CUST-00001", // Replace with actual customer name/ID
+          "customer_name": "Updated Customer Name",
+          "customer_type": "Individual", // Individual or Company
           "customer_group": "All Customer Groups",
           "territory": "All Territories"
         }
@@ -432,15 +438,6 @@ function App() {
       }
     }
 
-    // Check for smart customer detection first
-    if (docType === 'Customer' && method === 'PUT') {
-      // Try to detect customer name from endpoint or use smart defaults
-      const customerName = 'Yadav' // This could be made dynamic in the future
-      if (smartCustomerFields[customerName]) {
-        return JSON.stringify(smartCustomerFields[customerName][method], null, 2)
-      }
-    }
-    
     // Return specific fields for known DocTypes, or generic fields for unknown ones
     if (commonFields[docType]) {
       return JSON.stringify(commonFields[docType][method], null, 2)
@@ -787,6 +784,24 @@ function App() {
                     placeholder="/api/method/ping"
                   />
                 </div>
+
+                {method === 'PUT' && endpoint.includes('{name}') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Document Name
+                      <span className="text-blue-600 text-xs ml-2">
+                        💡 Enter the actual document name to replace {`{name}`} in the URL
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={documentName}
+                      onChange={(e) => handleDocumentNameChange(e.target.value)}
+                      placeholder="e.g., CUST-00001, Yadav, john.doe@example.com"
+                    />
+                  </div>
+                )}
 
                 {(method === 'POST' || method === 'PUT') && (
                   <div>
