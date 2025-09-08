@@ -330,6 +330,36 @@ function App() {
     }
   }
 
+  // New function to handle request body changes and update endpoint dynamically
+  const handleRequestBodyChange = (newRequestBody) => {
+    setRequestBody(newRequestBody)
+    
+    // If it's a PUT request and we have a {name} placeholder in the endpoint
+    if (method === 'PUT' && endpoint.includes('{name}')) {
+      try {
+        const bodyData = JSON.parse(newRequestBody)
+        
+        // Check if the body has a 'name' field
+        if (bodyData.name) {
+          const documentName = bodyData.name
+          
+          // URL encode the document name for the endpoint
+          const encodedName = encodeURIComponent(documentName)
+          const updatedEndpoint = endpoint.replace('{name}', encodedName)
+          setEndpoint(updatedEndpoint)
+          
+          // Also update the document name state
+          setDocumentName(documentName)
+          
+          console.log(`Updated endpoint to: ${updatedEndpoint}`)
+        }
+      } catch (e) {
+        // If JSON is invalid, don't update the endpoint
+        console.log('Invalid JSON in request body')
+      }
+    }
+  }
+
   const getDefaultRequestBody = (endpoint, method) => {
     // Generate appropriate default request body based on endpoint and method
     if (endpoint.includes('/api/resource/')) {
@@ -837,9 +867,9 @@ function App() {
                 {method === 'PUT' && endpoint.includes('{name}') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Name
-                      <span className="text-blue-600 text-xs ml-2">
-                        💡 Enter the document name to replace {`{name}`} in the URL
+                      Document Name (Optional)
+                      <span className="text-green-600 text-xs ml-2">
+                        ✨ Or just enter the name in the request body below - URL updates automatically!
                       </span>
                     </label>
                     <div className="flex gap-2">
@@ -848,7 +878,7 @@ function App() {
                         className="input flex-1"
                         value={documentName}
                         onChange={(e) => setDocumentName(e.target.value)}
-                        placeholder="e.g., Yadav, CUST-00001, john.doe@example.com"
+                        placeholder="e.g., Manoj Yadav, CUST-00001, john.doe@example.com"
                       />
                       <button
                         type="button"
@@ -860,7 +890,7 @@ function App() {
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      This will search for the exact document name and update both URL and request body
+                      This will search for the exact document name. Or simply type the name in the request body below.
                     </p>
                   </div>
                 )}
@@ -870,15 +900,15 @@ function App() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Request Body (JSON)
                       {method === 'PUT' && (
-                        <span className="text-orange-600 text-xs ml-2">
-                          ⚠️ For PUT: Use actual document name (e.g., CUST-00001) in both URL and 'name' field
+                        <span className="text-blue-600 text-xs ml-2">
+                          💡 For PUT: Enter document name in 'name' field - URL will update automatically
                         </span>
                       )}
                     </label>
                     <textarea
                       className="input min-h-[120px] resize-none"
                       value={requestBody}
-                      onChange={(e) => setRequestBody(e.target.value)}
+                      onChange={(e) => handleRequestBodyChange(e.target.value)}
                       placeholder='{"field": "value"}'
                     />
                   </div>
