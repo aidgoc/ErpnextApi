@@ -65,12 +65,12 @@ export const apiService = {
 
   // History management
   async getHistory() {
-    const response = await fetch(`${API_BASE_URL}/api/saved/history`)
+    const response = await fetch(`${API_BASE_URL}/api/history`)
     return response.json()
   },
 
   async saveToHistory(historyData) {
-    const response = await fetch(`${API_BASE_URL}/api/saved/history`, {
+    const response = await fetch(`${API_BASE_URL}/api/history`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
