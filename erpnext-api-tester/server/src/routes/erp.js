@@ -215,4 +215,80 @@ router.post('/test-connection', loadConnectionAndClient, async (req, res) => {
   }
 });
 
+/**
+ * POST /erp/generate-curl
+ * Generate cURL command with actual credentials
+ */
+router.post('/generate-curl', loadConnectionAndClient, async (req, res) => {
+  try {
+    const { method, path, query, body } = req.body;
+
+    // Validate required fields
+    if (!method || !path) {
+      return res.status(400).json({
+        ok: false,
+        message: 'method and path are required'
+      });
+    }
+
+    // Get decrypted credentials
+    const apiKey = await req.connection.getDecryptedApiKey();
+    const apiSecret = await req.connection.getDecryptedApiSecret();
+
+    const baseUrl = req.connection.baseUrl.replace(/\/$/, '');
+    const fullUrl = `${baseUrl}${path}`;
+    const domain = baseUrl.split('//')[1].split('/')[0];
+    
+    let curlCommand = `curl -X ${method} "${fullUrl}"`;
+    
+    // Add standard headers with actual credentials
+    const headers = [
+      'Content-Type: application/json',
+      'Accept: application/json',
+      `Authorization: token ${apiKey}:${apiSecret}`,
+      `X-Frappe-Site: ${domain}`,
+      `X-Frappe-API-Key: ${apiKey}`,
+      `X-Frappe-API-Secret: ${apiSecret}`
+    ];
+    
+    headers.forEach(header => {
+      curlCommand += ` \\\n  -H "${header}"`;
+    });
+    
+    // Add body for methods that support it
+    if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
+      const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+      curlCommand += ` \\\n  -d '${bodyString}'`;
+    }
+    
+    // Add query parameters for GET requests
+    if (method === 'GET' && path.includes('?')) {
+      const urlParts = path.split('?');
+      if (urlParts.length > 1) {
+        curlCommand += ` \\\n  -G -d "${urlParts[1]}"`;
+      }
+    }
+    
+    // Add verbose flag for better debugging
+    curlCommand += ` \\\n  -v`;
+
+    res.json({
+      ok: true,
+      data: {
+        curlCommand,
+        connectionId: req.connection._id,
+        connectionName: req.connection.name,
+        baseUrl: req.connection.baseUrl,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error generating cURL command:', error);
+    res.status(500).json({
+      ok: false,
+      message: error.message
+    });
+  }
+});
+
 export default router;

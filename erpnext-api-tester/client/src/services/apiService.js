@@ -78,5 +78,17 @@ export const apiService = {
       body: JSON.stringify(historyData)
     })
     return response.json()
+  },
+
+  // cURL generation with actual credentials
+  async generateCurlWithCredentials(requestData) {
+    const response = await fetch(`${API_BASE_URL}/api/erp/generate-curl`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    })
+    return response.json()
   }
 }

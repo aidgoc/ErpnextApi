@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { generateCurlCommand } from '../utils/curlGenerator'
-import { isEmpty } from '../utils/common'
+import { apiService } from '../services/apiService'
+import { isEmpty, safeJsonParse } from '../utils/common'
 import toast from 'react-hot-toast'
 
 const CurlGenerator = ({ 
@@ -11,17 +12,59 @@ const CurlGenerator = ({
   connections 
 }) => {
   const [showCurl, setShowCurl] = useState(false)
+  const [useCredentials, setUseCredentials] = useState(false)
+  const [curlCommand, setCurlCommand] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const getCurlCommand = () => {
-    return generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
+  const getCurlCommand = async () => {
+    if (useCredentials) {
+      if (!selectedConnection || !endpoint) {
+        return 'Please select a connection and endpoint to generate cURL command'
+      }
+      
+      setLoading(true)
+      try {
+        const requestData = {
+          connectionId: selectedConnection,
+          method: method,
+          path: endpoint,
+          query: method === 'GET' ? {} : undefined,
+          body: ['POST', 'PUT', 'PATCH'].includes(method) ? safeJsonParse(requestBody, {}) : undefined
+        }
+        
+        const response = await apiService.generateCurlWithCredentials(requestData)
+        if (response.ok) {
+          setCurlCommand(response.data.curlCommand)
+          return response.data.curlCommand
+        } else {
+          toast.error('Failed to generate cURL with credentials')
+          return 'Failed to generate cURL command'
+        }
+      } catch (error) {
+        toast.error('Error generating cURL command')
+        return 'Error generating cURL command'
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      const command = generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
+      setCurlCommand(command)
+      return command
+    }
   }
 
+  // Generate cURL command when dependencies change
+  useEffect(() => {
+    if (showCurl) {
+      getCurlCommand()
+    }
+  }, [method, endpoint, requestBody, selectedConnection, useCredentials, showCurl])
+
   const isValidCurlCommand = (command) => {
-    return command && !command.includes('Please select') && !command.includes('Connection not found')
+    return command && !command.includes('Please select') && !command.includes('Connection not found') && !command.includes('Failed to generate')
   }
 
   const handleCopyCurl = () => {
-    const curlCommand = getCurlCommand()
     if (isValidCurlCommand(curlCommand)) {
       navigator.clipboard.writeText(curlCommand)
       toast.success('cURL command copied to clipboard!')
@@ -31,7 +74,6 @@ const CurlGenerator = ({
   }
 
   const handleDownloadCurl = () => {
-    const curlCommand = getCurlCommand()
     if (isValidCurlCommand(curlCommand)) {
       const blob = new Blob([curlCommand], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
@@ -52,19 +94,36 @@ const CurlGenerator = ({
         <label className="block text-sm font-medium text-gray-700">
           cURL Command
         </label>
-        <button
-          type="button"
-          className="text-sm text-blue-600 hover:text-blue-800"
-          onClick={() => setShowCurl(!showCurl)}
-        >
-          {showCurl ? 'Hide' : 'Show'} cURL
-        </button>
+        <div className="flex items-center space-x-2">
+          <label className="flex items-center text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={useCredentials}
+              onChange={(e) => setUseCredentials(e.target.checked)}
+              className="mr-1"
+            />
+            Use actual credentials
+          </label>
+          <button
+            type="button"
+            className="text-sm text-blue-600 hover:text-blue-800"
+            onClick={() => setShowCurl(!showCurl)}
+          >
+            {showCurl ? 'Hide' : 'Show'} cURL
+          </button>
+        </div>
       </div>
       
       {showCurl && (
         <div className="bg-gray-100 p-3 rounded-md">
+          {useCredentials && (
+            <div className="mb-2 p-2 bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800">
+              ⚠️ <strong>Security Warning:</strong> This cURL command contains your actual API credentials. 
+              Only use this in secure environments and never share it publicly.
+            </div>
+          )}
           <pre className="text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
-            {getCurlCommand() || 'Select a connection and endpoint to generate cURL command'}
+            {loading ? 'Generating cURL command...' : (curlCommand || 'Select a connection and endpoint to generate cURL command')}
           </pre>
           <div className="mt-2 flex space-x-2">
             <button
