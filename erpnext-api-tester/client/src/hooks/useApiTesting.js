@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { getDocTypeFields } from '../utils/docTypeFields'
 import { apiService } from '../services/apiService'
 import { commonEndpoints } from '../constants/endpoints'
@@ -22,6 +22,17 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     [...commonEndpoints, ...customEndpoints], 
     [customEndpoints]
   )
+
+  // Reset state when connection changes
+  useEffect(() => {
+    console.log('Connection changed to:', selectedConnection)
+    setResponse({
+      status: 'Ready to test API calls',
+      message: 'Select a connection and send a request'
+    })
+    setDocumentName('')
+    setCustomDocTypeName('')
+  }, [selectedConnection])
 
   const handleEndpointSelect = useCallback((selectedEndpoint) => {
     const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
@@ -132,6 +143,12 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     console.log('Sending request with connection:', selectedConnection)
     const connection = connections.find(conn => conn._id === selectedConnection)
     console.log('Connection details:', connection)
+    
+    // Double-check that we're using the correct connection
+    if (!connection) {
+      toast.error('Selected connection not found')
+      return
+    }
 
     setLoading(true)
     try {

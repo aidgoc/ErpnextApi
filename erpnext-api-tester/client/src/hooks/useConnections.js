@@ -76,7 +76,9 @@ export const useConnections = () => {
     console.log('Setting selected connection to:', connectionId)
     const connection = connections.find(conn => conn._id === connectionId)
     console.log('Connection details:', connection)
+    console.log('Previous selected connection:', selectedConnection)
     setSelectedConnection(connectionId)
+    console.log('Selected connection set to:', connectionId)
   }
 
   return {
