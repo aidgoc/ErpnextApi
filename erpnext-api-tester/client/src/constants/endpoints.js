@@ -1,0 +1,60 @@
+// Common ERPNext endpoints
+export const commonEndpoints = [
+  // GET endpoints
+  { value: '/api/method/ping', label: 'Ping (Health Check)', method: 'GET' },
+  { value: '/api/method/frappe.auth.get_logged_user', label: 'Get Logged User', method: 'GET' },
+  { value: '/api/method/frappe.desk.form.load.getdoc', label: 'Load Document', method: 'GET' },
+  { value: '/api/resource/Customer', label: 'Customer List', method: 'GET' },
+  { value: '/api/resource/User', label: 'User List', method: 'GET' },
+  { value: '/api/resource/Item', label: 'Item List', method: 'GET' },
+  { value: '/api/resource/Sales Invoice', label: 'Sales Invoice List', method: 'GET' },
+  { value: '/api/resource/Purchase Invoice', label: 'Purchase Invoice List', method: 'GET' },
+  { value: '/api/resource/Quotation', label: 'Quotation List', method: 'GET' },
+  { value: '/api/resource/Sales Order', label: 'Sales Order List', method: 'GET' },
+  { value: '/api/resource/Purchase Order', label: 'Purchase Order List', method: 'GET' },
+  { value: '/api/resource/Lead', label: 'Lead List', method: 'GET' },
+  { value: '/api/resource/Opportunity', label: 'Opportunity List', method: 'GET' },
+  { value: '/api/resource/Address', label: 'Address List', method: 'GET' },
+  { value: '/api/resource/Contact', label: 'Contact List', method: 'GET' },
+  { value: '/api/resource/Company', label: 'Company List', method: 'GET' },
+  { value: '/api/resource/File', label: 'File List', method: 'GET' },
+  { value: '/api/resource/Version', label: 'Version List', method: 'GET' },
+  { value: '/api/resource/Error Log', label: 'Error Log List', method: 'GET' },
+  
+  // POST endpoints
+  { value: '/api/resource/Custom DocType', label: 'Create Custom DocType', method: 'POST' },
+  { value: '/api/resource/User', label: 'Create User', method: 'POST' },
+  { value: '/api/resource/Customer', label: 'Create Customer', method: 'POST' },
+  { value: '/api/resource/Item', label: 'Create Item', method: 'POST' },
+  { value: '/api/resource/Sales Invoice', label: 'Create Sales Invoice', method: 'POST' },
+  { value: '/api/resource/Purchase Invoice', label: 'Create Purchase Invoice', method: 'POST' },
+  { value: '/api/resource/Quotation', label: 'Create Quotation', method: 'POST' },
+  { value: '/api/resource/Sales Order', label: 'Create Sales Order', method: 'POST' },
+  { value: '/api/resource/Purchase Order', label: 'Create Purchase Order', method: 'POST' },
+  { value: '/api/resource/Lead', label: 'Create Lead', method: 'POST' },
+  { value: '/api/resource/Opportunity', label: 'Create Opportunity', method: 'POST' },
+  { value: '/api/resource/Address', label: 'Create Address', method: 'POST' },
+  { value: '/api/resource/Contact', label: 'Create Contact', method: 'POST' },
+  
+  // PUT endpoints
+  { value: '/api/resource/Customer/{name}', label: 'Update Customer', method: 'PUT' },
+  { value: '/api/resource/User/{name}', label: 'Update User', method: 'PUT' },
+  { value: '/api/resource/Item/{name}', label: 'Update Item', method: 'PUT' },
+  { value: '/api/resource/Sales Invoice/{name}', label: 'Update Sales Invoice', method: 'PUT' },
+  { value: '/api/resource/Purchase Invoice/{name}', label: 'Update Purchase Invoice', method: 'PUT' },
+  { value: '/api/resource/Quotation/{name}', label: 'Update Quotation', method: 'PUT' },
+  { value: '/api/resource/Sales Order/{name}', label: 'Update Sales Order', method: 'PUT' },
+  { value: '/api/resource/Purchase Order/{name}', label: 'Update Purchase Order', method: 'PUT' },
+  { value: '/api/resource/Lead/{name}', label: 'Update Lead', method: 'PUT' },
+  { value: '/api/resource/Opportunity/{name}', label: 'Update Opportunity', method: 'PUT' },
+  { value: '/api/resource/Address/{name}', label: 'Update Address', method: 'PUT' },
+  { value: '/api/resource/Contact/{name}', label: 'Update Contact', method: 'PUT' },
+  
+  // DELETE endpoints
+  { value: '/api/resource/Customer/{name}', label: 'Delete Customer', method: 'DELETE' },
+  { value: '/api/resource/User/{name}', label: 'Delete User', method: 'DELETE' },
+  { value: '/api/resource/Item/{name}', label: 'Delete Item', method: 'DELETE' },
+  { value: '/api/resource/Lead/{name}', label: 'Delete Lead', method: 'DELETE' },
+  { value: '/api/resource/Address/{name}', label: 'Delete Address', method: 'DELETE' },
+  { value: '/api/resource/Contact/{name}', label: 'Delete Contact', method: 'DELETE' }
+]
