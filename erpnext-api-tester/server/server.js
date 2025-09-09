@@ -92,9 +92,6 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🔧 API test: http://localhost:${PORT}/api/test`);
-      console.log(`🔐 Crypto test: http://localhost:${PORT}/api/crypto/test`);
-      console.log(`🔗 ERPNext test: http://localhost:${PORT}/api/erpnext/test-connection`);
-      console.log(`📋 ERPNext doc-types: http://localhost:${PORT}/api/erpnext/doc-types`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
