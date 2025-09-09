@@ -34,6 +34,11 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     setCustomDocTypeName('')
   }, [selectedConnection])
 
+  // Force re-render when connection changes to ensure fresh closure
+  useEffect(() => {
+    console.log('Connection state updated:', selectedConnection)
+  }, [selectedConnection])
+
   const handleEndpointSelect = useCallback((selectedEndpoint) => {
     const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
     if (!endpointData) return
@@ -132,7 +137,7 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     }
   }, [selectedConnection, method, endpoint, connections])
 
-  const sendRequest = useCallback(async () => {
+  const sendRequest = async () => {
     const validation = validateRequired({ selectedConnection, endpoint }, ['selectedConnection', 'endpoint'])
     if (!validation.valid) {
       toast.error(`Please ${validation.missing.includes('selectedConnection') ? 'select a connection' : 'select an endpoint'}`)
@@ -190,7 +195,7 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     } finally {
       setLoading(false)
     }
-  }, [selectedConnection, endpoint, method, requestBody])
+  }
 
   return {
     method,
