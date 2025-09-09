@@ -73,12 +73,16 @@ export const useConnections = () => {
   }, [])
 
   const handleSetSelectedConnection = (connectionId) => {
+    console.log('=== CONNECTION SELECTION DEBUG ===')
     console.log('Setting selected connection to:', connectionId)
     const connection = connections.find(conn => conn._id === connectionId)
     console.log('Connection details:', connection)
     console.log('Previous selected connection:', selectedConnection)
+    console.log('All available connections:', connections.map(c => ({ id: c._id, name: c.name })))
+    
     setSelectedConnection(connectionId)
     console.log('Selected connection set to:', connectionId)
+    console.log('=== END CONNECTION SELECTION DEBUG ===')
   }
 
   return {

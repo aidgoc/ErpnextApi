@@ -138,6 +138,12 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
   }, [selectedConnection, method, endpoint, connections])
 
   const sendRequest = async () => {
+    // Debug: Log all available connections and current selection
+    console.log('=== SEND REQUEST DEBUG ===')
+    console.log('Current selectedConnection:', selectedConnection)
+    console.log('All connections:', connections.map(c => ({ id: c._id, name: c.name })))
+    console.log('Available connection IDs:', connections.map(c => c._id))
+    
     const validation = validateRequired({ selectedConnection, endpoint }, ['selectedConnection', 'endpoint'])
     if (!validation.valid) {
       toast.error(`Please ${validation.missing.includes('selectedConnection') ? 'select a connection' : 'select an endpoint'}`)
@@ -151,6 +157,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     
     // Double-check that we're using the correct connection
     if (!connection) {
+      console.error('Selected connection not found!')
+      console.error('Looking for:', selectedConnection)
+      console.error('Available:', connections.map(c => c._id))
       toast.error('Selected connection not found')
       return
     }
