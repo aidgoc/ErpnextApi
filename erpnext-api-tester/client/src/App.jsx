@@ -17,6 +17,7 @@ function App() {
   })
   const [loading, setLoading] = useState(false)
   const [documentName, setDocumentName] = useState('')
+  const [customDocTypeName, setCustomDocTypeName] = useState('')
   
   // Endpoint management
   const [showCustomEndpoint, setShowCustomEndpoint] = useState(false)
@@ -462,6 +463,53 @@ function App() {
     return '{"field": "value"}'
   }
 
+  const generateCustomDocType = (docTypeName) => {
+    // Generate a flexible Custom DocType structure
+    const cleanName = docTypeName.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim()
+    const fieldName = cleanName.toLowerCase().replace(/\s+/g, '_')
+    
+    return {
+      "name": cleanName,
+      "title": cleanName,
+      "module": "Custom",
+      "is_custom": 1,
+      "fields": [
+        {
+          "fieldname": "title",
+          "fieldtype": "Data",
+          "label": "Title",
+          "reqd": 1
+        },
+        {
+          "fieldname": "description",
+          "fieldtype": "Text",
+          "label": "Description"
+        },
+        {
+          "fieldname": "status",
+          "fieldtype": "Select",
+          "label": "Status",
+          "options": "Draft\nSubmitted\nCancelled"
+        },
+        {
+          "fieldname": "amount",
+          "fieldtype": "Currency",
+          "label": "Amount"
+        },
+        {
+          "fieldname": "date",
+          "fieldtype": "Date",
+          "label": "Date"
+        },
+        {
+          "fieldname": "notes",
+          "fieldtype": "Text",
+          "label": "Notes"
+        }
+      ]
+    }
+  }
+
   const getDocTypeFields = (docType, method) => {
     // Generate appropriate fields based on DocType
     // For PUT requests: 
@@ -593,33 +641,10 @@ function App() {
         }
       },
       'Custom DocType': {
-        POST: {
-          "name": "Crane Details",
-          "title": "Crane Details",
-          "module": "Custom",
-          "is_custom": 1,
-          "fields": [
-            {
-              "fieldname": "crane_name",
-              "fieldtype": "Data",
-              "label": "Crane Name",
-              "reqd": 1
-            },
-            {
-              "fieldname": "crane_model",
-              "fieldtype": "Data", 
-              "label": "Crane Model"
-            },
-            {
-              "fieldname": "crane_capacity",
-              "fieldtype": "Float",
-              "label": "Crane Capacity (Tons)"
-            }
-          ]
-        },
+        POST: generateCustomDocType(customDocTypeName || "My Custom DocType"),
         PUT: {
-          "name": "Crane Details",
-          "title": "Updated Crane Details",
+          "name": customDocTypeName || "My Custom DocType",
+          "title": "Updated Custom DocType",
           "module": "Custom",
           "is_custom": 1
         }
@@ -1021,6 +1046,28 @@ function App() {
                         Find & Update
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {method === 'POST' && endpoint === '/api/resource/Custom DocType' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom DocType Name
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={customDocTypeName}
+                      onChange={(e) => {
+                        setCustomDocTypeName(e.target.value)
+                        // Regenerate request body with new name
+                        if (e.target.value) {
+                          const newBody = generateCustomDocType(e.target.value)
+                          setRequestBody(JSON.stringify(newBody, null, 2))
+                        }
+                      }}
+                      placeholder="e.g., Crane Details, Project Tasks, Equipment"
+                    />
                   </div>
                 )}
 
