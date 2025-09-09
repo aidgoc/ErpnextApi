@@ -68,25 +68,3 @@ export function decryptSecret(payload, keyBase64) {
   }
 }
 
-/**
- * Generate a random 32-byte key and return it as base64
- * @returns {string} Base64 encoded random key
- */
-export function generateEncryptionKey() {
-  const key = crypto.randomBytes(32);
-  return key.toString('base64');
-}
-
-/**
- * Validate that a base64 string represents a 32-byte key
- * @param {string} keyBase64 - Base64 encoded key to validate
- * @returns {boolean} True if valid, false otherwise
- */
-export function validateEncryptionKey(keyBase64) {
-  try {
-    const key = Buffer.from(keyBase64, 'base64');
-    return key.length === 32;
-  } catch (error) {
-    return false;
-  }
-}

@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { commonEndpoints } from '../constants/endpoints'
+
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE']
 
 const EndpointSelector = ({ 
   method, 
@@ -8,6 +10,11 @@ const EndpointSelector = ({
   onMethodChange, 
   onEndpointSelect 
 }) => {
+  const filteredEndpoints = useMemo(() => 
+    [...commonEndpoints, ...customEndpoints].filter(ep => ep.method === method),
+    [method, customEndpoints]
+  )
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -19,10 +26,11 @@ const EndpointSelector = ({
           value={method}
           onChange={(e) => onMethodChange(e.target.value)}
         >
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="DELETE">DELETE</option>
+          {HTTP_METHODS.map(methodOption => (
+            <option key={methodOption} value={methodOption}>
+              {methodOption}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -35,13 +43,11 @@ const EndpointSelector = ({
           onChange={(e) => onEndpointSelect(e.target.value)}
         >
           <option value="">Select an endpoint...</option>
-          {[...commonEndpoints, ...customEndpoints]
-            .filter(ep => ep.method === method)
-            .map(ep => (
-              <option key={ep.value} value={ep.value}>
-                {ep.label}
-              </option>
-            ))}
+          {filteredEndpoints.map(ep => (
+            <option key={ep.value} value={ep.value}>
+              {ep.label}
+            </option>
+          ))}
         </select>
       </div>
     </div>

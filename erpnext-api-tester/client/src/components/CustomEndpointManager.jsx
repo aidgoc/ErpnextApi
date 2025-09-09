@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { commonEndpoints } from '../constants/endpoints'
-import { validateRequired, isEmpty } from '../utils/common'
+import { validateRequired } from '../utils/common'
 import toast from 'react-hot-toast'
 
 const CustomEndpointManager = ({ 
@@ -13,7 +13,7 @@ const CustomEndpointManager = ({
   const [showCustomEndpoint, setShowCustomEndpoint] = useState(false)
   const [customEndpoint, setCustomEndpoint] = useState('')
 
-  const addCustomEndpoint = async () => {
+  const addCustomEndpoint = useCallback(async () => {
     const validation = validateRequired({ customEndpoint }, ['customEndpoint'])
     if (!validation.valid) {
       toast.error('Please enter a custom endpoint')
@@ -42,8 +42,7 @@ const CustomEndpointManager = ({
 
     if (result.success) {
       // Add to local state
-      const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
-      setCustomEndpoints(updatedCustomEndpoints)
+      setCustomEndpoints(prev => [...prev, newCustomEndpoint])
       
       // Set as current endpoint
       onEndpointSelect(newCustomEndpoint.value)
@@ -51,7 +50,12 @@ const CustomEndpointManager = ({
       setCustomEndpoint('')
       toast.success('Custom endpoint added and selected')
     }
-  }
+  }, [customEndpoint, method, customEndpoints, onCreateCustomEndpoint, onEndpointSelect, setCustomEndpoints])
+
+  const resetForm = useCallback(() => {
+    setShowCustomEndpoint(false)
+    setCustomEndpoint('')
+  }, [])
 
   return (
     <div>
@@ -85,7 +89,7 @@ const CustomEndpointManager = ({
             </button>
             <button 
               className="btn btn-secondary"
-              onClick={() => setShowCustomEndpoint(false)}
+              onClick={resetForm}
             >
               Cancel
             </button>

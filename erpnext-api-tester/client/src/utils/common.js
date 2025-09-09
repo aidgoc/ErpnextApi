@@ -72,41 +72,6 @@ export const extractDomain = (url) => {
   }
 }
 
-/**
- * Debounce function for performance
- */
-export const debounce = (func, wait) => {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
-/**
- * Throttle function for performance
- */
-export const throttle = (func, limit) => {
-  let inThrottle
-  return function executedFunction(...args) {
-    if (!inThrottle) {
-      func.apply(this, args)
-      inThrottle = true
-      setTimeout(() => inThrottle = false, limit)
-    }
-  }
-}
-
-/**
- * Generate unique ID
- */
-export const generateId = () => {
-  return Math.random().toString(36).substr(2, 9)
-}
 
 /**
  * Check if value is empty
@@ -119,20 +84,3 @@ export const isEmpty = (value) => {
   return false
 }
 
-/**
- * Deep clone object
- */
-export const deepClone = (obj) => {
-  if (obj === null || typeof obj !== 'object') return obj
-  if (obj instanceof Date) return new Date(obj.getTime())
-  if (obj instanceof Array) return obj.map(item => deepClone(item))
-  if (typeof obj === 'object') {
-    const clonedObj = {}
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        clonedObj[key] = deepClone(obj[key])
-      }
-    }
-    return clonedObj
-  }
-}

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getDocTypeFields, generateCustomDocType } from '../utils/docTypeFields'
+import { useState, useCallback, useMemo } from 'react'
+import { getDocTypeFields } from '../utils/docTypeFields'
 import { apiService } from '../services/apiService'
 import { commonEndpoints } from '../constants/endpoints'
 import { safeJsonParse, safeJsonStringify, validateRequired, handleError } from '../utils/common'
@@ -17,35 +17,37 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
   const [documentName, setDocumentName] = useState('')
   const [customDocTypeName, setCustomDocTypeName] = useState('')
 
-  const handleEndpointSelect = (selectedEndpoint) => {
-    // Look in both common and custom endpoints
-    const allEndpoints = [...commonEndpoints, ...customEndpoints]
-    const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
-    if (endpointData) {
-      let finalEndpoint = endpointData.value
-      
-      // Smart endpoint replacement for PUT requests
-      if (method === 'PUT' && endpointData.value.includes('{name}')) {
-        // If user has entered a document name, use it; otherwise keep placeholder
-        if (documentName) {
-          finalEndpoint = endpointData.value.replace('{name}', documentName)
-        } else {
-          finalEndpoint = endpointData.value
-        }
-      }
-      
-      setEndpoint(finalEndpoint)
-      
-      // Set appropriate default request body based on current method and endpoint
-      if (method === 'POST' || method === 'PUT') {
-        setRequestBody(getDocTypeFields(endpointData.value.split('/').pop(), method, customDocTypeName))
-      } else {
-        setRequestBody('{"field": "value"}')
-      }
-    }
-  }
+  // Memoize all endpoints to avoid recalculation
+  const allEndpoints = useMemo(() => 
+    [...commonEndpoints, ...customEndpoints], 
+    [customEndpoints]
+  )
 
-  const handleMethodChange = (newMethod) => {
+  const handleEndpointSelect = useCallback((selectedEndpoint) => {
+    const endpointData = allEndpoints.find(ep => ep.value === selectedEndpoint)
+    if (!endpointData) return
+
+    let finalEndpoint = endpointData.value
+    
+    // Smart endpoint replacement for PUT requests
+    if (method === 'PUT' && endpointData.value.includes('{name}')) {
+      finalEndpoint = documentName 
+        ? endpointData.value.replace('{name}', documentName)
+        : endpointData.value
+    }
+    
+    setEndpoint(finalEndpoint)
+    
+    // Set appropriate default request body based on current method and endpoint
+    if (method === 'POST' || method === 'PUT') {
+      const docType = endpointData.value.split('/').pop()
+      setRequestBody(getDocTypeFields(docType, method, customDocTypeName))
+    } else {
+      setRequestBody('{"field": "value"}')
+    }
+  }, [allEndpoints, method, documentName, customDocTypeName])
+
+  const handleMethodChange = useCallback((newMethod) => {
     setMethod(newMethod)
     
     // Update request body based on new method
@@ -55,9 +57,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     } else {
       setRequestBody('{"field": "value"}')
     }
-  }
+  }, [endpoint, customDocTypeName])
 
-  const handleRequestBodyChange = (value) => {
+  const handleRequestBodyChange = useCallback((value) => {
     setRequestBody(value)
     
     // Dynamic endpoint update based on request body content
@@ -82,9 +84,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
         }
       }
     }
-  }
+  }, [method, endpoint])
 
-  const handleDocumentNameChange = async (name) => {
+  const handleDocumentNameChange = useCallback(async (name) => {
     if (!name || !selectedConnection) return
     
     setDocumentName(name)
@@ -117,9 +119,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
         console.error('Error finding document:', error)
       }
     }
-  }
+  }, [selectedConnection, method, endpoint, connections])
 
-  const sendRequest = async () => {
+  const sendRequest = useCallback(async () => {
     const validation = validateRequired({ selectedConnection, endpoint }, ['selectedConnection', 'endpoint'])
     if (!validation.valid) {
       toast.error(`Please ${validation.missing.includes('selectedConnection') ? 'select a connection' : 'select an endpoint'}`)
@@ -166,7 +168,7 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedConnection, endpoint, method, requestBody])
 
   return {
     method,

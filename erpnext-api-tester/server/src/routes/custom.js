@@ -1,5 +1,12 @@
 import express from 'express';
 import { CustomEndpoint, Connection } from '../models/index.js';
+import { 
+  successResponse, 
+  errorResponse, 
+  validationErrorResponse,
+  notFoundResponse,
+  asyncHandler 
+} from '../utils/response.js';
 
 const router = express.Router();
 
@@ -7,110 +14,86 @@ const router = express.Router();
  * POST /custom
  * Create a new custom endpoint
  */
-router.post('/', async (req, res) => {
-  try {
-    const { label, method, path, notes, connectionId } = req.body;
+router.post('/', asyncHandler(async (req, res) => {
+  const { label, method, path, notes, connectionId } = req.body;
 
-    // Validate required fields
-    if (!label || !method || !path || !connectionId) {
-      return res.status(400).json({
-        ok: false,
-        message: 'label, method, path, and connectionId are required'
-      });
-    }
-
-    // Create custom endpoint
-    const customEndpoint = await CustomEndpoint.createEndpoint({
-      label,
-      method,
-      path,
-      notes,
-      connectionId
-    });
-
-    // Populate connection info
-    await customEndpoint.populate('connectionId', 'name baseUrl');
-
-    res.status(201).json({
-      ok: true,
-      data: customEndpoint,
-      message: 'Custom endpoint created successfully'
-    });
-  } catch (error) {
-    console.error('Error creating custom endpoint:', error);
-    res.status(500).json({
-      ok: false,
-      message: error.message
-    });
+  // Validate required fields
+  if (!label || !method || !path || !connectionId) {
+    const response = validationErrorResponse('label, method, path, and connectionId are required');
+    return res.status(response.status).json(response.json);
   }
-});
+
+  // Create custom endpoint
+  const customEndpoint = await CustomEndpoint.createEndpoint({
+    label,
+    method,
+    path,
+    notes,
+    connectionId
+  });
+
+  // Populate connection info
+  await customEndpoint.populate('connectionId', 'name baseUrl');
+
+  const response = successResponse(customEndpoint, 'Custom endpoint created successfully', 201);
+  res.status(response.status).json(response.json);
+}));
 
 /**
  * GET /custom
  * List custom endpoints for a connection
  */
-router.get('/', async (req, res) => {
-  try {
-    const { connectionId, method, search, limit = 50, page = 1 } = req.query;
+router.get('/', asyncHandler(async (req, res) => {
+  const { connectionId, method, search, limit = 50, page = 1 } = req.query;
 
-    if (!connectionId) {
-      return res.status(400).json({
-        ok: false,
-        message: 'connectionId is required'
-      });
-    }
-
-    // Validate connection exists
-    const connection = await Connection.findById(connectionId);
-    if (!connection) {
-      return res.status(404).json({
-        ok: false,
-        message: 'Connection not found'
-      });
-    }
-
-    // Build query
-    const query = { connectionId };
-    if (method) query.method = method.toUpperCase();
-    if (search) {
-      query.$or = [
-        { label: { $regex: search, $options: 'i' } },
-        { path: { $regex: search, $options: 'i' } },
-        { notes: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Execute query
-    const customEndpoints = await CustomEndpoint.find(query)
-      .populate('connectionId', 'name baseUrl')
-      .sort({ method: 1, path: 1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get total count for pagination
-    const totalCount = await CustomEndpoint.countDocuments(query);
-
-    res.json({
-      ok: true,
-      data: customEndpoints,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: totalCount,
-        pages: Math.ceil(totalCount / parseInt(limit))
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching custom endpoints:', error);
-    res.status(500).json({
-      ok: false,
-      message: error.message
-    });
+  if (!connectionId) {
+    const response = validationErrorResponse('connectionId is required');
+    return res.status(response.status).json(response.json);
   }
-});
+
+  // Validate connection exists
+  const connection = await Connection.findById(connectionId);
+  if (!connection) {
+    const response = notFoundResponse('Connection');
+    return res.status(response.status).json(response.json);
+  }
+
+  // Build query
+  const query = { connectionId };
+  if (method) query.method = method.toUpperCase();
+  if (search) {
+    query.$or = [
+      { label: { $regex: search, $options: 'i' } },
+      { path: { $regex: search, $options: 'i' } },
+      { notes: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  // Calculate pagination
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Execute query
+  const customEndpoints = await CustomEndpoint.find(query)
+    .populate('connectionId', 'name baseUrl')
+    .sort({ method: 1, path: 1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Get total count for pagination
+  const totalCount = await CustomEndpoint.countDocuments(query);
+
+  const response = successResponse({
+    customEndpoints,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: totalCount,
+      pages: Math.ceil(totalCount / parseInt(limit))
+    }
+  }, 'Custom endpoints retrieved successfully');
+  
+  res.status(response.status).json(response.json);
+}));
 
 /**
  * GET /custom/:id

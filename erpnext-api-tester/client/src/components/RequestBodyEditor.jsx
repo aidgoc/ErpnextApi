@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { generateCustomDocType } from '../utils/docTypeFields'
 
 const RequestBodyEditor = ({ 
@@ -12,9 +12,21 @@ const RequestBodyEditor = ({
   onRequestBodyChange,
   onDocumentNameChange
 }) => {
+  const handleCustomDocTypeChange = useCallback((value) => {
+    setCustomDocTypeName(value)
+    if (value) {
+      const newBody = generateCustomDocType(value)
+      onRequestBodyChange(JSON.stringify(newBody, null, 2))
+    }
+  }, [setCustomDocTypeName, onRequestBodyChange])
+
+  const showDocumentIdentifier = method === 'PUT' && endpoint.includes('{name}')
+  const showCustomDocType = method === 'POST' && endpoint === '/api/resource/Custom DocType'
+  const showRequestBody = method === 'POST' || method === 'PUT'
+
   return (
     <div className="space-y-4">
-      {method === 'PUT' && endpoint.includes('{name}') && (
+      {showDocumentIdentifier && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Document Identifier (Optional)
@@ -39,7 +51,7 @@ const RequestBodyEditor = ({
         </div>
       )}
 
-      {method === 'POST' && endpoint === '/api/resource/Custom DocType' && (
+      {showCustomDocType && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Custom DocType Name
@@ -48,20 +60,13 @@ const RequestBodyEditor = ({
             type="text"
             className="input"
             value={customDocTypeName}
-            onChange={(e) => {
-              setCustomDocTypeName(e.target.value)
-              // Regenerate request body with new name
-              if (e.target.value) {
-                const newBody = generateCustomDocType(e.target.value)
-                onRequestBodyChange(JSON.stringify(newBody, null, 2))
-              }
-            }}
+            onChange={(e) => handleCustomDocTypeChange(e.target.value)}
             placeholder="e.g., Crane Details, Project Tasks, Equipment"
           />
         </div>
       )}
 
-      {(method === 'POST' || method === 'PUT') && (
+      {showRequestBody && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Request Body (JSON)

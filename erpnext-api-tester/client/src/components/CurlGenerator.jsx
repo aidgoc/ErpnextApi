@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { generateCurlCommand } from '../utils/curlGenerator'
 import { apiService } from '../services/apiService'
-import { isEmpty, safeJsonParse } from '../utils/common'
+import { safeJsonParse } from '../utils/common'
 import toast from 'react-hot-toast'
 
 const CurlGenerator = ({ 

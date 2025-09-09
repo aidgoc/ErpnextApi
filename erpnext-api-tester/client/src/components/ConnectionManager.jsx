@@ -1,6 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useConnections } from '../hooks/useConnections'
 import { validateRequired, formatConnectionName } from '../utils/common'
+
+const INITIAL_CONNECTION_STATE = {
+  name: '',
+  baseUrl: '',
+  apiKey: '',
+  apiSecret: ''
+}
 
 const ConnectionManager = () => {
   const { 
@@ -8,28 +15,31 @@ const ConnectionManager = () => {
     selectedConnection, 
     setSelectedConnection, 
     loading, 
-    createConnection, 
-    deleteConnection 
+    createConnection
   } = useConnections()
   
   const [showNewConnection, setShowNewConnection] = useState(false)
-  const [newConnection, setNewConnection] = useState({
-    name: '',
-    baseUrl: '',
-    apiKey: '',
-    apiSecret: ''
-  })
+  const [newConnection, setNewConnection] = useState(INITIAL_CONNECTION_STATE)
 
-  const handleCreateConnection = async () => {
+  const handleCreateConnection = useCallback(async () => {
     const validation = validateRequired(newConnection, ['name', 'baseUrl', 'apiKey', 'apiSecret'])
     if (!validation.valid) return
 
     const result = await createConnection(newConnection)
     if (result.success) {
-      setNewConnection({ name: '', baseUrl: '', apiKey: '', apiSecret: '' })
+      setNewConnection(INITIAL_CONNECTION_STATE)
       setShowNewConnection(false)
     }
-  }
+  }, [newConnection, createConnection])
+
+  const handleInputChange = useCallback((field, value) => {
+    setNewConnection(prev => ({ ...prev, [field]: value }))
+  }, [])
+
+  const resetForm = useCallback(() => {
+    setNewConnection(INITIAL_CONNECTION_STATE)
+    setShowNewConnection(false)
+  }, [])
 
   return (
     <div className="card p-6">
@@ -67,57 +77,25 @@ const ConnectionManager = () => {
           <div className="space-y-3 p-4 bg-gray-50 rounded-md">
             <h3 className="font-medium text-gray-900">Create New Connection</h3>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Connection Name
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={newConnection.name}
-                onChange={(e) => setNewConnection({...newConnection, name: e.target.value})}
-                placeholder="e.g., Production, Development"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Base URL
-              </label>
-              <input
-                type="url"
-                className="input"
-                value={newConnection.baseUrl}
-                onChange={(e) => setNewConnection({...newConnection, baseUrl: e.target.value})}
-                placeholder="https://your-erpnext-instance.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                API Key
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={newConnection.apiKey}
-                onChange={(e) => setNewConnection({...newConnection, apiKey: e.target.value})}
-                placeholder="Your ERPNext API Key"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                API Secret
-              </label>
-              <input
-                type="password"
-                className="input"
-                value={newConnection.apiSecret}
-                onChange={(e) => setNewConnection({...newConnection, apiSecret: e.target.value})}
-                placeholder="Your ERPNext API Secret"
-              />
-            </div>
+            {[
+              { field: 'name', label: 'Connection Name', type: 'text', placeholder: 'e.g., Production, Development' },
+              { field: 'baseUrl', label: 'Base URL', type: 'url', placeholder: 'https://your-erpnext-instance.com' },
+              { field: 'apiKey', label: 'API Key', type: 'text', placeholder: 'Your ERPNext API Key' },
+              { field: 'apiSecret', label: 'API Secret', type: 'password', placeholder: 'Your ERPNext API Secret' }
+            ].map(({ field, label, type, placeholder }) => (
+              <div key={field}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  className="input"
+                  value={newConnection[field]}
+                  onChange={(e) => handleInputChange(field, e.target.value)}
+                  placeholder={placeholder}
+                />
+              </div>
+            ))}
 
             <div className="flex space-x-2">
               <button 
@@ -129,7 +107,7 @@ const ConnectionManager = () => {
               </button>
               <button 
                 className="btn btn-secondary"
-                onClick={() => setShowNewConnection(false)}
+                onClick={resetForm}
               >
                 Cancel
               </button>
