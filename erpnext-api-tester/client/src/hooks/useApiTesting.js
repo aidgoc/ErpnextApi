@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getDocTypeFields, generateCustomDocType } from '../utils/docTypeFields'
 import { apiService } from '../services/apiService'
 import { commonEndpoints } from '../constants/endpoints'
+import { safeJsonParse, safeJsonStringify, validateRequired, handleError } from '../utils/common'
 import toast from 'react-hot-toast'
 
 export const useApiTesting = (selectedConnection, connections, customEndpoints = []) => {
@@ -61,28 +62,24 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     
     // Dynamic endpoint update based on request body content
     if (method === 'PUT' && value) {
-      try {
-        const bodyData = JSON.parse(value)
+      const bodyData = safeJsonParse(value, {})
+      
+      // Check for common identifier fields
+      const identifierFields = ['name', 'email', 'item_code', 'customer_name', 'lead_name']
+      const identifierField = identifierFields.find(field => bodyData[field])
+      
+      if (identifierField && bodyData[identifierField]) {
+        const identifier = bodyData[identifierField]
+        const encodedIdentifier = encodeURIComponent(identifier)
         
-        // Check for common identifier fields
-        const identifierFields = ['name', 'email', 'item_code', 'customer_name', 'lead_name']
-        const identifierField = identifierFields.find(field => bodyData[field])
-        
-        if (identifierField && bodyData[identifierField]) {
-          const identifier = bodyData[identifierField]
-          const encodedIdentifier = encodeURIComponent(identifier)
-          
-          // Update endpoint if it contains {name} placeholder
-          if (endpoint.includes('{name}')) {
-            setEndpoint(endpoint.replace('{name}', encodedIdentifier))
-          } else {
-            // Construct endpoint from scratch if no placeholder
-            const basePath = endpoint.split('/').slice(0, -1).join('/')
-            setEndpoint(`${basePath}/${encodedIdentifier}`)
-          }
+        // Update endpoint if it contains {name} placeholder
+        if (endpoint.includes('{name}')) {
+          setEndpoint(endpoint.replace('{name}', encodedIdentifier))
+        } else {
+          // Construct endpoint from scratch if no placeholder
+          const basePath = endpoint.split('/').slice(0, -1).join('/')
+          setEndpoint(`${basePath}/${encodedIdentifier}`)
         }
-      } catch (error) {
-        // Invalid JSON, ignore
       }
     }
   }
@@ -110,13 +107,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
             const encodedName = encodeURIComponent(exactName)
             setEndpoint(endpoint.replace('{name}', encodedName))
             setRequestBody(prev => {
-              try {
-                const bodyData = JSON.parse(prev)
-                bodyData.name = exactName
-                return JSON.stringify(bodyData, null, 2)
-              } catch {
-                return prev
-              }
+              const bodyData = safeJsonParse(prev, {})
+              bodyData.name = exactName
+              return safeJsonStringify(bodyData, prev)
             })
           }
         }
@@ -127,13 +120,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
   }
 
   const sendRequest = async () => {
-    if (!selectedConnection) {
-      toast.error('Please select a connection')
-      return
-    }
-
-    if (!endpoint) {
-      toast.error('Please select an endpoint')
+    const validation = validateRequired({ selectedConnection, endpoint }, ['selectedConnection', 'endpoint'])
+    if (!validation.valid) {
+      toast.error(`Please ${validation.missing.includes('selectedConnection') ? 'select a connection' : 'select an endpoint'}`)
       return
     }
 
@@ -144,7 +133,7 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
         method: method,
         path: endpoint,
         query: method === 'GET' ? {} : undefined,
-        body: method !== 'GET' ? JSON.parse(requestBody) : undefined
+        body: method !== 'GET' ? safeJsonParse(requestBody, {}) : undefined
       }
 
       const res = await apiService.sendRequest(requestData)
@@ -167,12 +156,12 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
         toast.error(res.message)
       }
     } catch (error) {
-      const errorResponse = {
+      const errorResult = handleError(error, 'Request failed')
+      setResponse({
         status: 'Error',
-        message: error.response?.data?.message || error.message,
-        error: error.response?.data || error.message
-      }
-      setResponse(errorResponse)
+        message: errorResult.error,
+        error: errorResult.error
+      })
       toast.error('Request failed')
     } finally {
       setLoading(false)

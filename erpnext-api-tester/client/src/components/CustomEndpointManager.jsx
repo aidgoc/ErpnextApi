@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { commonEndpoints } from '../constants/endpoints'
+import { validateRequired, isEmpty } from '../utils/common'
 import toast from 'react-hot-toast'
 
 const CustomEndpointManager = ({ 
@@ -13,39 +14,42 @@ const CustomEndpointManager = ({
   const [customEndpoint, setCustomEndpoint] = useState('')
 
   const addCustomEndpoint = async () => {
-    if (customEndpoint.trim()) {
-      const newCustomEndpoint = {
-        value: customEndpoint.trim(),
-        label: `Custom: ${customEndpoint.trim()}`,
-        method: method
-      }
-      
-      // Check if endpoint already exists
-      const exists = [...commonEndpoints, ...customEndpoints].some(ep => ep.value === newCustomEndpoint.value)
-      if (exists) {
-        toast.error('This endpoint already exists')
-        return
-      }
-      
-      const result = await onCreateCustomEndpoint({
-        label: newCustomEndpoint.label,
-        method: newCustomEndpoint.method,
-        path: newCustomEndpoint.value
-      })
-
-      if (result.success) {
-        // Add to local state
-        const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
-        setCustomEndpoints(updatedCustomEndpoints)
-        
-        // Set as current endpoint
-        onEndpointSelect(newCustomEndpoint.value)
-        setShowCustomEndpoint(false)
-        setCustomEndpoint('')
-        toast.success('Custom endpoint added and selected')
-      }
-    } else {
+    const validation = validateRequired({ customEndpoint }, ['customEndpoint'])
+    if (!validation.valid) {
       toast.error('Please enter a custom endpoint')
+      return
+    }
+
+    const trimmedEndpoint = customEndpoint.trim()
+    const newCustomEndpoint = {
+      value: trimmedEndpoint,
+      label: `Custom: ${trimmedEndpoint}`,
+      method: method
+    }
+    
+    // Check if endpoint already exists
+    const exists = [...commonEndpoints, ...customEndpoints].some(ep => ep.value === newCustomEndpoint.value)
+    if (exists) {
+      toast.error('This endpoint already exists')
+      return
+    }
+    
+    const result = await onCreateCustomEndpoint({
+      label: newCustomEndpoint.label,
+      method: newCustomEndpoint.method,
+      path: newCustomEndpoint.value
+    })
+
+    if (result.success) {
+      // Add to local state
+      const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
+      setCustomEndpoints(updatedCustomEndpoints)
+      
+      // Set as current endpoint
+      onEndpointSelect(newCustomEndpoint.value)
+      setShowCustomEndpoint(false)
+      setCustomEndpoint('')
+      toast.success('Custom endpoint added and selected')
     }
   }
 

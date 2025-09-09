@@ -1,6 +1,14 @@
 import express from 'express';
 import { Connection } from '../models/index.js';
 import ERPNextClient from '../erpnext/ERPNextClient.js';
+import { 
+  successResponse, 
+  errorResponse, 
+  validationErrorResponse, 
+  notFoundResponse,
+  asyncHandler,
+  validateRequiredFields 
+} from '../utils/response.js';
 
 const router = express.Router();
 
@@ -8,97 +16,65 @@ const router = express.Router();
  * DELETE /connections/reset
  * Clear all connections (for fixing encryption key issues)
  */
-router.delete('/reset', async (req, res) => {
-  try {
-    await Connection.deleteMany({});
-    res.json({
-      ok: true,
-      message: 'All connections cleared successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      ok: false,
-      message: 'Failed to clear connections',
-      error: error.message
-    });
-  }
-});
+router.delete('/reset', asyncHandler(async (req, res) => {
+  await Connection.deleteMany({});
+  const response = successResponse(null, 'All connections cleared successfully');
+  res.status(response.status).json(response.json);
+}));
 
 /**
  * POST /connections
  * Create a new connection with encrypted secrets and test ping
  */
-router.post('/', async (req, res) => {
-  try {
-    const { name, baseUrl, apiKey, apiSecret } = req.body;
+router.post('/', asyncHandler(async (req, res) => {
+  const { name, baseUrl, apiKey, apiSecret } = req.body;
 
-    // Validate required fields
-    if (!name || !baseUrl || !apiKey || !apiSecret) {
-      return res.status(400).json({
-        ok: false,
-        message: 'name, baseUrl, apiKey, and apiSecret are required'
-      });
-    }
-
-    // Create connection with encrypted secrets
-    const connection = await Connection.createWithSecrets({
-      name,
-      baseUrl,
-      apiKey,
-      apiSecret
-    });
-
-    // Test the connection
-    const client = new ERPNextClient({ baseUrl, apiKey, apiSecret });
-    const pingResult = await client.ping();
-
-    // Return connection without secrets
-    const response = {
-      _id: connection._id,
-      name: connection.name,
-      baseUrl: connection.baseUrl,
-      hasSecrets: connection.hasSecrets,
-      createdAt: connection.createdAt,
-      ping: pingResult
-    };
-
-    res.status(201).json({
-      ok: true,
-      data: response,
-      message: pingResult ? 'Connection created and tested successfully' : 'Connection created but ping failed'
-    });
-  } catch (error) {
-    console.error('Error creating connection:', error);
-    res.status(500).json({
-      ok: false,
-      message: error.message
-    });
+  // Validate required fields
+  const validation = validateRequiredFields(req.body, ['name', 'baseUrl', 'apiKey', 'apiSecret']);
+  if (!validation.valid) {
+    const response = validationErrorResponse(validation.message, validation.missing);
+    return res.status(response.status).json(response.json);
   }
-});
+
+  // Create connection with encrypted secrets
+  const connection = await Connection.createWithSecrets({
+    name,
+    baseUrl,
+    apiKey,
+    apiSecret
+  });
+
+  // Test the connection
+  const client = new ERPNextClient({ baseUrl, apiKey, apiSecret });
+  const pingResult = await client.ping();
+
+  // Return connection without secrets
+  const responseData = {
+    _id: connection._id,
+    name: connection.name,
+    baseUrl: connection.baseUrl,
+    hasSecrets: connection.hasSecrets,
+    createdAt: connection.createdAt,
+    ping: pingResult
+  };
+
+  const message = pingResult ? 'Connection created and tested successfully' : 'Connection created but ping failed';
+  const response = successResponse(responseData, message, 201);
+  res.status(response.status).json(response.json);
+}));
 
 /**
  * GET /connections
  * List all connections (omit secrets)
  */
-router.get('/', async (req, res) => {
-  try {
-    const connections = await Connection.find()
-      .select('-apiKeyEnc -apiSecretEnc -ivBase64 -tagBase64')
-      .sort({ createdAt: -1 });
+router.get('/', asyncHandler(async (req, res) => {
+  const connections = await Connection.find()
+    .select('-apiKeyEnc -apiSecretEnc -apiKeyIvBase64 -apiKeyTagBase64 -apiSecretIvBase64 -apiSecretTagBase64')
+    .sort({ createdAt: -1 });
 
-    res.json({
-      ok: true,
-      data: connections,
-      count: connections.length
-    });
-  } catch (error) {
-    console.error('Error fetching connections:', error);
-    res.status(500).json({
-      ok: false,
-      message: error.message
-    });
-  }
-});
+  const response = successResponse(connections, 'Connections retrieved successfully');
+  res.status(response.status).json(response.json);
+}));
 
 /**
  * PATCH /connections/:id

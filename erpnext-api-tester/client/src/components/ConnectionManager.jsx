@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useConnections } from '../hooks/useConnections'
+import { validateRequired, formatConnectionName } from '../utils/common'
 
 const ConnectionManager = () => {
   const { 
@@ -20,9 +21,8 @@ const ConnectionManager = () => {
   })
 
   const handleCreateConnection = async () => {
-    if (!newConnection.name || !newConnection.baseUrl || !newConnection.apiKey || !newConnection.apiSecret) {
-      return
-    }
+    const validation = validateRequired(newConnection, ['name', 'baseUrl', 'apiKey', 'apiSecret'])
+    if (!validation.valid) return
 
     const result = await createConnection(newConnection)
     if (result.success) {
@@ -48,7 +48,7 @@ const ConnectionManager = () => {
             <option value="">Select a connection...</option>
             {connections.map(conn => (
               <option key={conn._id} value={conn._id}>
-                {conn.name} - {conn.baseUrl}
+                {formatConnectionName(conn)}
               </option>
             ))}
           </select>

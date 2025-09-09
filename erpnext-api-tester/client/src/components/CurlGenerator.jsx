@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { generateCurlCommand } from '../utils/curlGenerator'
+import { isEmpty } from '../utils/common'
 import toast from 'react-hot-toast'
 
 const CurlGenerator = ({ 
@@ -11,9 +12,17 @@ const CurlGenerator = ({
 }) => {
   const [showCurl, setShowCurl] = useState(false)
 
+  const getCurlCommand = () => {
+    return generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
+  }
+
+  const isValidCurlCommand = (command) => {
+    return command && !command.includes('Please select') && !command.includes('Connection not found')
+  }
+
   const handleCopyCurl = () => {
-    const curlCommand = generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
-    if (curlCommand && !curlCommand.includes('Please select')) {
+    const curlCommand = getCurlCommand()
+    if (isValidCurlCommand(curlCommand)) {
       navigator.clipboard.writeText(curlCommand)
       toast.success('cURL command copied to clipboard!')
     } else {
@@ -22,8 +31,8 @@ const CurlGenerator = ({
   }
 
   const handleDownloadCurl = () => {
-    const curlCommand = generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
-    if (curlCommand && !curlCommand.includes('Please select')) {
+    const curlCommand = getCurlCommand()
+    if (isValidCurlCommand(curlCommand)) {
       const blob = new Blob([curlCommand], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -55,7 +64,7 @@ const CurlGenerator = ({
       {showCurl && (
         <div className="bg-gray-100 p-3 rounded-md">
           <pre className="text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
-            {generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections) || 'Select a connection and endpoint to generate cURL command'}
+            {getCurlCommand() || 'Select a connection and endpoint to generate cURL command'}
           </pre>
           <div className="mt-2 flex space-x-2">
             <button

@@ -1,39 +1,48 @@
 // cURL command generator utility
+import { safeJsonParse, safeJsonStringify, extractDomain } from './common.js'
+
+const ERROR_MESSAGES = {
+  NO_CONNECTION: 'Please select a connection and endpoint to generate cURL command',
+  CONNECTION_NOT_FOUND: 'Connection not found. Please select a valid connection.'
+}
+
+const HTTP_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH']
 
 export const generateCurlCommand = (method, endpoint, requestBody, selectedConnection, connections) => {
   if (!selectedConnection || !endpoint) {
-    return 'Please select a connection and endpoint to generate cURL command'
+    return ERROR_MESSAGES.NO_CONNECTION
   }
 
   const connection = connections.find(conn => conn._id === selectedConnection)
   if (!connection) {
-    return 'Connection not found. Please select a valid connection.'
+    return ERROR_MESSAGES.CONNECTION_NOT_FOUND
   }
 
   const baseUrl = connection.baseUrl.replace(/\/$/, '') // Remove trailing slash
   const fullUrl = `${baseUrl}${endpoint}`
+  const domain = extractDomain(baseUrl)
   
   let curlCommand = `curl -X ${method} "${fullUrl}"`
   
-  // Add headers
-  curlCommand += ` \\\n  -H "Content-Type: application/json"`
-  curlCommand += ` \\\n  -H "Accept: application/json"`
+  // Add standard headers
+  const headers = [
+    'Content-Type: application/json',
+    'Accept: application/json',
+    'Authorization: token YOUR_API_KEY:YOUR_API_SECRET',
+    `X-Frappe-Site: ${domain}`,
+    'X-Frappe-API-Key: YOUR_API_KEY',
+    'X-Frappe-API-Secret: YOUR_API_SECRET'
+  ]
   
-  // Add ERPNext authentication headers
-  curlCommand += ` \\\n  -H "Authorization: token YOUR_API_KEY:YOUR_API_SECRET"`
-  curlCommand += ` \\\n  -H "X-Frappe-Site: ${baseUrl.split('//')[1].split('/')[0]}"`
-  curlCommand += ` \\\n  -H "X-Frappe-API-Key: YOUR_API_KEY"`
-  curlCommand += ` \\\n  -H "X-Frappe-API-Secret: YOUR_API_SECRET"`
+  headers.forEach(header => {
+    curlCommand += ` \\\n  -H "${header}"`
+  })
   
-  // Add body for POST/PUT requests
-  if ((method === 'POST' || method === 'PUT') && requestBody) {
-    try {
-      const bodyData = JSON.parse(requestBody)
-      const bodyString = JSON.stringify(bodyData)
-      curlCommand += ` \\\n  -d '${bodyString}'`
-    } catch (error) {
-      curlCommand += ` \\\n  -d '${requestBody}'`
-    }
+  // Add body for methods that support it
+  if (HTTP_METHODS_WITH_BODY.includes(method) && requestBody) {
+    const bodyData = safeJsonParse(requestBody, {})
+    const bodyString = safeJsonStringify(bodyData, requestBody)
+    curlCommand += ` \\\n  -d '${bodyString}'`
   }
   
   // Add query parameters for GET requests
