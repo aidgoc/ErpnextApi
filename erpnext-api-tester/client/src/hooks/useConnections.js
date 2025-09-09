@@ -28,7 +28,10 @@ export const useConnections = () => {
       if (res.ok) {
         toast.success('Connection created successfully')
         await loadConnections()
-        setSelectedConnection(res.data._id)
+        // Only auto-select if no connection is currently selected
+        if (!selectedConnection) {
+          setSelectedConnection(res.data._id)
+        }
         return { success: true, data: res.data }
       } else {
         toast.error(res.message)

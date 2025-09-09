@@ -128,6 +128,11 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
       return
     }
 
+    // Debug: Log the selected connection
+    console.log('Sending request with connection:', selectedConnection)
+    const connection = connections.find(conn => conn._id === selectedConnection)
+    console.log('Connection details:', connection)
+
     setLoading(true)
     try {
       const requestData = {
