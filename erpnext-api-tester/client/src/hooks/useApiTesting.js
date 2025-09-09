@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { getDocTypeFields } from '../utils/docTypeFields'
 import { apiService } from '../services/apiService'
 import { commonEndpoints } from '../constants/endpoints'
@@ -16,6 +16,9 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
   const [loading, setLoading] = useState(false)
   const [documentName, setDocumentName] = useState('')
   const [customDocTypeName, setCustomDocTypeName] = useState('')
+  
+  // Use ref to store current connection to avoid stale closure
+  const currentConnectionRef = useRef(selectedConnection)
 
   // Memoize all endpoints to avoid recalculation
   const allEndpoints = useMemo(() => 
@@ -34,9 +37,11 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     setCustomDocTypeName('')
   }, [selectedConnection])
 
-  // Force re-render when connection changes to ensure fresh closure
+  // Update ref when connection changes
   useEffect(() => {
-    console.log('Connection state updated:', selectedConnection)
+    console.log('Connection state updated in useApiTesting:', selectedConnection)
+    currentConnectionRef.current = selectedConnection
+    console.log('Updated currentConnectionRef to:', currentConnectionRef.current)
   }, [selectedConnection])
 
   const handleEndpointSelect = useCallback((selectedEndpoint) => {
@@ -138,27 +143,31 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
   }, [selectedConnection, method, endpoint, connections])
 
   const sendRequest = async () => {
+    // Use ref to get the current connection (avoids stale closure)
+    const currentConnection = currentConnectionRef.current
+    
     // Debug: Log all available connections and current selection
     console.log('=== SEND REQUEST DEBUG ===')
-    console.log('Current selectedConnection:', selectedConnection)
+    console.log('Current selectedConnection (prop):', selectedConnection)
+    console.log('Current connection (ref):', currentConnection)
     console.log('All connections:', connections.map(c => ({ id: c._id, name: c.name })))
     console.log('Available connection IDs:', connections.map(c => c._id))
     
-    const validation = validateRequired({ selectedConnection, endpoint }, ['selectedConnection', 'endpoint'])
+    const validation = validateRequired({ selectedConnection: currentConnection, endpoint }, ['selectedConnection', 'endpoint'])
     if (!validation.valid) {
       toast.error(`Please ${validation.missing.includes('selectedConnection') ? 'select a connection' : 'select an endpoint'}`)
       return
     }
 
     // Debug: Log the selected connection
-    console.log('Sending request with connection:', selectedConnection)
-    const connection = connections.find(conn => conn._id === selectedConnection)
+    console.log('Sending request with connection:', currentConnection)
+    const connection = connections.find(conn => conn._id === currentConnection)
     console.log('Connection details:', connection)
     
     // Double-check that we're using the correct connection
     if (!connection) {
       console.error('Selected connection not found!')
-      console.error('Looking for:', selectedConnection)
+      console.error('Looking for:', currentConnection)
       console.error('Available:', connections.map(c => c._id))
       toast.error('Selected connection not found')
       return
@@ -167,7 +176,7 @@ export const useApiTesting = (selectedConnection, connections, customEndpoints =
     setLoading(true)
     try {
       const requestData = {
-        connectionId: selectedConnection,
+        connectionId: currentConnection,
         method: method,
         path: endpoint,
         query: method === 'GET' ? {} : undefined,
