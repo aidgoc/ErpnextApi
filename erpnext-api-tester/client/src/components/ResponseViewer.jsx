@@ -77,9 +77,7 @@ const ResponseViewer = ({ response }) => {
 
           {(response.data || response.message) && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                {showHeaders ? 'Data:' : 'Response:'}
-              </h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Response:</h3>
               <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto max-h-96">
                 {formatResponse(response.data || response.message)}
               </pre>
