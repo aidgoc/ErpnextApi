@@ -59,7 +59,7 @@ function App() {
     { value: '/api/method/frappe.auth.get_logged_user', label: 'Get Logged User', method: 'GET' },
     
     // POST endpoints
-    { value: '/api/resource/DocType', label: 'Create DocType', method: 'POST' },
+    { value: '/api/resource/Custom DocType', label: 'Create Custom DocType', method: 'POST' },
     { value: '/api/resource/User', label: 'Create User', method: 'POST' },
     { value: '/api/resource/Customer', label: 'Create Customer', method: 'POST' },
     { value: '/api/resource/Item', label: 'Create Item', method: 'POST' },
@@ -590,6 +590,38 @@ function App() {
           "name": "ADD-001",
           "address_title": "Updated Address",
           "address_type": "Billing"
+        }
+      },
+      'Custom DocType': {
+        POST: {
+          "name": "Crane Details",
+          "title": "Crane Details",
+          "module": "Custom",
+          "is_custom": 1,
+          "fields": [
+            {
+              "fieldname": "crane_name",
+              "fieldtype": "Data",
+              "label": "Crane Name",
+              "reqd": 1
+            },
+            {
+              "fieldname": "crane_model",
+              "fieldtype": "Data", 
+              "label": "Crane Model"
+            },
+            {
+              "fieldname": "crane_capacity",
+              "fieldtype": "Float",
+              "label": "Crane Capacity (Tons)"
+            }
+          ]
+        },
+        PUT: {
+          "name": "Crane Details",
+          "title": "Updated Crane Details",
+          "module": "Custom",
+          "is_custom": 1
         }
       }
     }
