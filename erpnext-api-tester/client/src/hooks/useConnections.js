@@ -30,7 +30,10 @@ export const useConnections = () => {
         await loadConnections()
         // Only auto-select if no connection is currently selected
         if (!selectedConnection) {
+          console.log('Auto-selecting new connection:', res.data._id)
           setSelectedConnection(res.data._id)
+        } else {
+          console.log('Keeping current selection:', selectedConnection)
         }
         return { success: true, data: res.data }
       } else {
@@ -69,10 +72,17 @@ export const useConnections = () => {
     loadConnections()
   }, [])
 
+  const handleSetSelectedConnection = (connectionId) => {
+    console.log('Setting selected connection to:', connectionId)
+    const connection = connections.find(conn => conn._id === connectionId)
+    console.log('Connection details:', connection)
+    setSelectedConnection(connectionId)
+  }
+
   return {
     connections,
     selectedConnection,
-    setSelectedConnection,
+    setSelectedConnection: handleSetSelectedConnection,
     loading,
     loadConnections,
     createConnection,

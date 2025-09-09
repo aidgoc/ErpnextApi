@@ -16,6 +16,11 @@ const router = express.Router();
 const loadConnectionAndClient = asyncHandler(async (req, res, next) => {
   const connectionId = req.query.connectionId || req.body.connectionId;
   
+  // Debug: Log the connection ID being used
+  console.log('Server received connectionId:', connectionId);
+  console.log('Request body:', req.body);
+  console.log('Request query:', req.query);
+  
   if (!connectionId) {
     const response = validationErrorResponse('connectionId is required in query or body');
     return res.status(response.status).json(response.json);
@@ -26,6 +31,9 @@ const loadConnectionAndClient = asyncHandler(async (req, res, next) => {
     const response = errorResponse('Connection not found', null, 404);
     return res.status(response.status).json(response.json);
   }
+  
+  // Debug: Log the connection being used
+  console.log('Server using connection:', connection.name, connection.baseUrl);
 
   // Decrypt secrets
   const apiKey = await connection.getDecryptedApiKey();
