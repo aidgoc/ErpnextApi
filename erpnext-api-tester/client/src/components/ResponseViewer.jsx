@@ -38,7 +38,7 @@ const ResponseViewer = ({ response }) => {
           )}
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           {response.status && (
             <div>
               <span className="text-sm font-medium text-gray-700">Status: </span>
@@ -69,7 +69,7 @@ const ResponseViewer = ({ response }) => {
           {response.headers && showHeaders && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Headers:</h3>
-              <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">
                 {formatResponse(response.headers)}
               </pre>
             </div>
@@ -78,7 +78,7 @@ const ResponseViewer = ({ response }) => {
           {(response.data || response.message) && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Response:</h3>
-              <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto max-h-96">
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">
                 {formatResponse(response.data || response.message)}
               </pre>
             </div>
@@ -87,7 +87,7 @@ const ResponseViewer = ({ response }) => {
           {response.error && (
             <div>
               <h3 className="text-sm font-medium text-red-700 mb-2">Error:</h3>
-              <pre className="bg-red-50 p-3 rounded text-xs overflow-x-auto max-h-96 text-red-800">
+              <pre className="bg-red-50 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap text-red-800">
                 {formatResponse(response.error)}
               </pre>
             </div>
