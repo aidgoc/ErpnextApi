@@ -18,6 +18,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [documentName, setDocumentName] = useState('')
   const [customDocTypeName, setCustomDocTypeName] = useState('')
+  const [showCurl, setShowCurl] = useState(false)
   
   // Endpoint management
   const [showCustomEndpoint, setShowCustomEndpoint] = useState(false)
@@ -508,6 +509,50 @@ function App() {
         }
       ]
     }
+  }
+
+  const generateCurlCommand = () => {
+    if (!selectedConnection || !endpoint) return ''
+
+    const connection = connections.find(conn => conn._id === selectedConnection)
+    if (!connection) return ''
+
+    const baseUrl = connection.baseUrl.replace(/\/$/, '') // Remove trailing slash
+    const fullUrl = `${baseUrl}${endpoint}`
+    
+    let curlCommand = `curl -X ${method} "${fullUrl}"`
+    
+    // Add headers
+    curlCommand += ` \\\n  -H "Content-Type: application/json"`
+    curlCommand += ` \\\n  -H "Accept: application/json"`
+    
+    // Add ERPNext authentication headers
+    curlCommand += ` \\\n  -H "Authorization: token YOUR_API_KEY:YOUR_API_SECRET"`
+    curlCommand += ` \\\n  -H "X-Frappe-Site: ${baseUrl.split('//')[1].split('/')[0]}"`
+    
+    // Add body for POST/PUT requests
+    if ((method === 'POST' || method === 'PUT') && requestBody) {
+      try {
+        const bodyData = JSON.parse(requestBody)
+        const bodyString = JSON.stringify(bodyData)
+        curlCommand += ` \\\n  -d '${bodyString}'`
+      } catch (error) {
+        curlCommand += ` \\\n  -d '${requestBody}'`
+      }
+    }
+    
+    // Add query parameters for GET requests
+    if (method === 'GET' && endpoint.includes('?')) {
+      const urlParts = endpoint.split('?')
+      if (urlParts.length > 1) {
+        curlCommand += ` \\\n  -G -d "${urlParts[1]}"`
+      }
+    }
+    
+    // Add verbose flag for better debugging
+    curlCommand += ` \\\n  -v`
+    
+    return curlCommand
   }
 
   const getDocTypeFields = (docType, method) => {
@@ -1091,7 +1136,65 @@ function App() {
                   disabled={loading || !selectedConnection || !endpoint}
                 >
                   {loading ? 'Sending...' : 'Send Request'}
-        </button>
+                </button>
+
+                {/* cURL Code Generator */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      cURL Command
+                    </label>
+                    <button
+                      type="button"
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                      onClick={() => setShowCurl(!showCurl)}
+                    >
+                      {showCurl ? 'Hide' : 'Show'} cURL
+                    </button>
+                  </div>
+                  
+                  {showCurl && (
+                    <div className="bg-gray-100 p-3 rounded-md">
+                      <pre className="text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
+                        {generateCurlCommand() || 'Select a connection and endpoint to generate cURL command'}
+                      </pre>
+                      <div className="mt-2 flex space-x-2">
+                        <button
+                          type="button"
+                          className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                          onClick={() => {
+                            const curlCommand = generateCurlCommand()
+                            if (curlCommand) {
+                              navigator.clipboard.writeText(curlCommand)
+                              toast.success('cURL command copied to clipboard!')
+                            }
+                          }}
+                        >
+                          Copy cURL
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700"
+                          onClick={() => {
+                            const curlCommand = generateCurlCommand()
+                            if (curlCommand) {
+                              const blob = new Blob([curlCommand], { type: 'text/plain' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = 'curl-command.txt'
+                              a.click()
+                              URL.revokeObjectURL(url)
+                              toast.success('cURL command downloaded!')
+                            }
+                          }}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
