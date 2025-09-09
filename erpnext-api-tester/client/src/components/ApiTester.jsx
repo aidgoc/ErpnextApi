@@ -30,7 +30,7 @@ const ApiTester = ({ selectedConnection, connections, onResponse }) => {
     handleRequestBodyChange,
     handleDocumentNameChange,
     sendRequest
-  } = useApiTesting(selectedConnection, connections)
+  } = useApiTesting(selectedConnection, connections, customEndpoints)
 
   // Update parent component when response changes
   React.useEffect(() => {
@@ -77,7 +77,10 @@ const ApiTester = ({ selectedConnection, connections, onResponse }) => {
           requestBody={requestBody}
           customDocTypeName={customDocTypeName}
           setCustomDocTypeName={setCustomDocTypeName}
+          documentName={documentName}
+          setDocumentName={setDocumentName}
           onRequestBodyChange={handleRequestBodyChange}
+          onDocumentNameChange={handleDocumentNameChange}
         />
 
         <button 

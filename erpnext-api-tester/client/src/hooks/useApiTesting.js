@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { getDocTypeFields, generateCustomDocType } from '../utils/docTypeFields'
 import { apiService } from '../services/apiService'
+import { commonEndpoints } from '../constants/endpoints'
 import toast from 'react-hot-toast'
 
-export const useApiTesting = (selectedConnection, connections) => {
+export const useApiTesting = (selectedConnection, connections, customEndpoints = []) => {
   const [method, setMethod] = useState('GET')
   const [endpoint, setEndpoint] = useState('/api/method/ping')
   const [requestBody, setRequestBody] = useState('{"field": "value"}')

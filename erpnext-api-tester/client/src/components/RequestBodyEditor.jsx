@@ -7,7 +7,10 @@ const RequestBodyEditor = ({
   requestBody, 
   customDocTypeName,
   setCustomDocTypeName,
-  onRequestBodyChange 
+  documentName,
+  setDocumentName,
+  onRequestBodyChange,
+  onDocumentNameChange
 }) => {
   return (
     <div className="space-y-4">
@@ -20,11 +23,15 @@ const RequestBodyEditor = ({
             <input
               type="text"
               className="input flex-1"
+              value={documentName}
+              onChange={(e) => setDocumentName(e.target.value)}
               placeholder="e.g., Manoj Yadav, john.doe@example.com, ITEM-001, LEAD-001"
             />
             <button
               type="button"
+              onClick={() => onDocumentNameChange(documentName)}
               className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              disabled={!documentName}
             >
               Find & Update
             </button>
