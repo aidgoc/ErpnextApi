@@ -13,15 +13,17 @@ const CurlGenerator = ({
 
   const handleCopyCurl = () => {
     const curlCommand = generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
-    if (curlCommand) {
+    if (curlCommand && !curlCommand.includes('Please select')) {
       navigator.clipboard.writeText(curlCommand)
       toast.success('cURL command copied to clipboard!')
+    } else {
+      toast.error('Cannot copy cURL command. Please select a connection and endpoint.')
     }
   }
 
   const handleDownloadCurl = () => {
     const curlCommand = generateCurlCommand(method, endpoint, requestBody, selectedConnection, connections)
-    if (curlCommand) {
+    if (curlCommand && !curlCommand.includes('Please select')) {
       const blob = new Blob([curlCommand], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -30,6 +32,8 @@ const CurlGenerator = ({
       a.click()
       URL.revokeObjectURL(url)
       toast.success('cURL command downloaded!')
+    } else {
+      toast.error('Cannot download cURL command. Please select a connection and endpoint.')
     }
   }
 
