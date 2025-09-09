@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 const ResponseViewer = ({ response }) => {
+  const [showHeaders, setShowHeaders] = useState(false)
   const formatResponse = (data) => {
     if (typeof data === 'object') {
       return JSON.stringify(data, null, 2)
@@ -24,7 +25,18 @@ const ResponseViewer = ({ response }) => {
   return (
     <div className="mt-6">
       <div className="card p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Response</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-gray-900">Response</h2>
+          {response.headers && (
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:text-blue-800"
+              onClick={() => setShowHeaders(!showHeaders)}
+            >
+              {showHeaders ? 'Hide' : 'Show'} Headers
+            </button>
+          )}
+        </div>
         
         <div className="space-y-4">
           {response.status && (
@@ -54,7 +66,7 @@ const ResponseViewer = ({ response }) => {
             </div>
           )}
 
-          {response.headers && (
+          {response.headers && showHeaders && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Headers:</h3>
               <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
@@ -65,7 +77,9 @@ const ResponseViewer = ({ response }) => {
 
           {(response.data || response.message) && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Data:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                {showHeaders ? 'Data:' : 'Response:'}
+              </h3>
               <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto max-h-96">
                 {formatResponse(response.data || response.message)}
               </pre>
