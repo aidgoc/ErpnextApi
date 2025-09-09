@@ -14,16 +14,20 @@ export const useCustomEndpoints = (selectedConnection) => {
     
     try {
       const res = await apiService.getCustomEndpoints(selectedConnection)
-      if (res.ok) {
+      if (res.ok && Array.isArray(res.data)) {
         const serverEndpoints = res.data.map(ep => ({
           value: ep.path,
           label: ep.label,
           method: ep.method
         }))
         setCustomEndpoints(serverEndpoints)
+      } else {
+        console.error('Invalid response format for custom endpoints:', res)
+        setCustomEndpoints([])
       }
     } catch (error) {
       console.error('Error loading custom endpoints:', error)
+      setCustomEndpoints([])
     }
   }
 

@@ -29,8 +29,23 @@ export const apiService = {
 
   // Custom endpoints management
   async getCustomEndpoints(connectionId) {
-    const response = await fetch(`${API_BASE_URL}/api/custom?connectionId=${connectionId}`)
-    return response.json()
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/custom?connectionId=${connectionId}`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      return response.json()
+    } catch (error) {
+      console.error('Failed to fetch custom endpoints:', error)
+      return {
+        ok: false,
+        data: [],
+        message: error.message,
+        error: 'Failed to connect to server'
+      }
+    }
   },
 
   async createCustomEndpoint(endpointData) {
@@ -53,14 +68,28 @@ export const apiService = {
 
   // ERPNext API requests
   async sendRequest(requestData) {
-    const response = await fetch(`${API_BASE_URL}/api/erp/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData)
-    })
-    return response.json()
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/erp/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      return response.json()
+    } catch (error) {
+      console.error('API request failed:', error)
+      return {
+        ok: false,
+        message: error.message,
+        error: 'Failed to connect to server'
+      }
+    }
   },
 
   // History management
