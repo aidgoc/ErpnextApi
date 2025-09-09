@@ -167,16 +167,14 @@ function App() {
     loadCustomEndpoints()
   }, [])
 
-  const loadCustomEndpoints = () => {
-    const saved = localStorage.getItem('erpnext-custom-endpoints')
-    if (saved) {
-      try {
-        setCustomEndpoints(JSON.parse(saved))
-      } catch (error) {
-        console.error('Failed to load custom endpoints:', error)
-      }
+  // Load custom endpoints when connection changes
+  useEffect(() => {
+    if (selectedConnection) {
+      loadCustomEndpoints()
+    } else {
+      setCustomEndpoints([])
     }
-  }
+  }, [selectedConnection])
 
   const saveCustomEndpoints = (endpoints) => {
     localStorage.setItem('erpnext-custom-endpoints', JSON.stringify(endpoints))
@@ -193,6 +191,24 @@ function App() {
       }
     } catch (error) {
       toast.error('Failed to load connections')
+    }
+  }
+
+  const loadCustomEndpoints = async () => {
+    if (!selectedConnection) return
+    
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/custom?connectionId=${selectedConnection}`)
+      if (res.data.ok) {
+        const serverEndpoints = res.data.data.map(ep => ({
+          value: ep.path,
+          label: ep.label,
+          method: ep.method
+        }))
+        setCustomEndpoints(serverEndpoints)
+      }
+    } catch (error) {
+      console.error('Error loading custom endpoints:', error)
     }
   }
 
@@ -597,8 +613,13 @@ function App() {
     }
   }
 
-  const addCustomEndpoint = () => {
+  const addCustomEndpoint = async () => {
     if (customEndpoint.trim()) {
+      if (!selectedConnection) {
+        toast.error('Please select a connection first')
+        return
+      }
+
       const newCustomEndpoint = {
         value: customEndpoint.trim(),
         label: `Custom: ${customEndpoint.trim()}`,
@@ -612,10 +633,31 @@ function App() {
         return
       }
       
-      // Add to custom endpoints
-      const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
-      setCustomEndpoints(updatedCustomEndpoints)
-      saveCustomEndpoints(updatedCustomEndpoints)
+      try {
+        // Save to server (MongoDB)
+        const response = await axios.post(`${API_BASE_URL}/api/custom`, {
+          label: newCustomEndpoint.label,
+          method: newCustomEndpoint.method,
+          path: newCustomEndpoint.value,
+          connectionId: selectedConnection
+        })
+
+        if (response.data.ok) {
+          // Add to local state
+          const updatedCustomEndpoints = [...customEndpoints, newCustomEndpoint]
+          setCustomEndpoints(updatedCustomEndpoints)
+          saveCustomEndpoints(updatedCustomEndpoints)
+          
+          toast.success('Custom endpoint saved to database')
+        } else {
+          toast.error('Failed to save custom endpoint')
+          return
+        }
+      } catch (error) {
+        console.error('Error saving custom endpoint:', error)
+        toast.error('Failed to save custom endpoint to database')
+        return
+      }
       
       // Set as current endpoint
       setEndpoint(newCustomEndpoint.value)
